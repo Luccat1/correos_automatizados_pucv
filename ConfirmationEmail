@@ -1,0 +1,426 @@
+/**
+ * SCRIPT DE CONFIRMACIÓN DE APERTURA DE CURSO
+ * 
+ * Este script envía correos de confirmación a estudiantes, gestionando códigos de descuento dinámicos.
+ * Incluye soporte para CCs por idioma y nivel del curso.
+ */
+
+/***** CONFIGURACIÓN *****/
+const CFG_CONF = {
+    spreadsheetId: "1vZBk-Q24tHOVkmv-QGi9r3vzpbWJE787--blDe-pTVA", // ¡REEMPLAZAR!
+    sheetName: "Confirmaciones",
+
+    senderName: "Programa Idiomas PUCV",
+    subjectTemplate: (idioma, nivel) => `Confirmación de Apertura: Curso de ${idioma} ${nivel} - Programa Idiomas PUCV`,
+
+    // Si es true, crea borradores en lugar de enviar correos.
+    createDrafts: true,
+
+    paymentBaseUrl: "https://vaf.ucv.cl:8446/PortalEventos/evento.jsp?id=1521",
+
+    // Plazo de pago por defecto (se usa si la columna 'plazo' está vacía)
+    defaultPaymentDeadline: "jueves 19 de diciembre a las 12:00 hrs",
+
+    // Códigos de Descuento
+    discounts: {
+        base: "1FKGLL1V04",
+        pucv: "MBXMZPXC6C",
+        german: "H4ZCVH5Z48",
+        german_continuation_pucv: "WH5BC8XS3L"
+    },
+
+    // Correos en Copia (CC) según idioma
+    // Si el idioma contiene la clave, se agrega el correo. 'default' es para todos.
+    ccs: {
+        "alemán": "alina.neumeyer@pucv.cl, jana.strohbach@pucv.cl, idiomas@pucv.cl",
+        "inglés": "coordinacion.ingles@pucv.cl, idiomas@pucv.cl",
+        "default": "idiomas@pucv.cl"
+    }
+};
+
+/***** COLUMNAS ESPERADAS *****/
+const HEADERS_CONF = {
+    nombre: "nombre",
+    correo: "correo",
+    idioma: "idioma",
+    nivel: "nivel",
+    horario: "horario",
+    plazo: "plazo",       // Nueva columna opcional
+    es_continuacion: "es_continuacion",
+    estado: "estado"
+};
+
+/***** PÚBLICAS *****/
+
+/**
+ * Función Principal: Envía los correos basándose en la lista.
+ */
+function sendConfirmationEmails() {
+    const sh = getSheet_Conf_();
+    const { headers, col } = getHeaderIndexes_Conf_(sh);
+    const statusColIdx = ensureStatusColumn_Conf_(sh, headers, HEADERS_CONF.estado);
+
+    const data = sh.getDataRange().getValues();
+    if (data.length <= 1) return;
+
+    let processed = 0;
+    const updates = [];
+
+    // Iterar filas de datos
+    for (let r = 1; r < data.length; r++) {
+        const row = data[r];
+        const status = (row[statusColIdx - 1] || "").toString().toLowerCase();
+
+        if (status.includes("enviado") || status.includes("error")) {
+            updates.push([row[statusColIdx - 1]]);
+            continue;
+        }
+
+        try {
+            const nombre = safeCell_Conf_(row, col.nombre);
+            const correo = safeCell_Conf_(row, col.correo);
+            const idioma = safeCell_Conf_(row, col.idioma);
+            const nivel = safeCell_Conf_(row, col.nivel);
+            const horario = safeCell_Conf_(row, col.horario);
+            const plazoRaw = safeCell_Conf_(row, col.plazo);
+            const esContinuacion = safeCell_Conf_(row, col.es_continuacion).toLowerCase().includes("si");
+
+            // Usar plazo de la columna o el por defecto
+            const plazo = plazoRaw || CFG_CONF.defaultPaymentDeadline;
+
+            if (!correo || !nombre) {
+                updates.push(["Error: Faltan datos"]);
+                continue;
+            }
+
+            // 1. Determinar Código de Descuento
+            const discountCode = determineDiscountCode_(correo, idioma, esContinuacion);
+
+            // 2. Determinar CCs
+            const ccEmails = determineCCs_(idioma);
+
+            // 3. Construir Correo
+            const htmlBody = buildHtmlBody_Conf_({
+                nombre,
+                idioma,
+                nivel,
+                horario,
+                plazo,
+                discountCode,
+                paymentUrl: CFG_CONF.paymentBaseUrl
+            });
+
+            const plainBody = buildPlainTextBody_Conf_({
+                nombre,
+                idioma,
+                nivel,
+                horario,
+                plazo,
+                discountCode,
+                paymentUrl: CFG_CONF.paymentBaseUrl
+            });
+
+            // 4. Enviar o Crear Borrador
+            if (CFG_CONF.createDrafts) {
+                GmailApp.createDraft(correo, CFG_CONF.subjectTemplate(idioma, nivel), plainBody, {
+                    htmlBody: htmlBody,
+                    name: CFG_CONF.senderName,
+                    cc: ccEmails
+                });
+                updates.push([`Borrador ${new Date().toLocaleString()}`]);
+            } else {
+                GmailApp.sendEmail(correo, CFG_CONF.subjectTemplate(idioma, nivel), plainBody, {
+                    htmlBody: htmlBody,
+                    name: CFG_CONF.senderName,
+                    cc: ccEmails
+                });
+                updates.push([`Enviado ${new Date().toLocaleString()}`]);
+            }
+
+            processed++;
+
+        } catch (e) {
+            updates.push([`Error: ${e.message}`]);
+        }
+    }
+
+    // Escribir estados de vuelta
+    sh.getRange(2, statusColIdx, updates.length, 1).setValues(updates);
+    Logger.log(`Procesados: ${processed}`);
+}
+
+/**
+ * Envía un CORREO DE PRUEBA con datos ficticios al usuario activo.
+ */
+function sendGenericTestEmail_Conf() {
+    const activeUser = Session.getActiveUser().getEmail();
+    if (!activeUser) throw new Error("No se pudo obtener el correo del usuario activo.");
+
+    const fakeData = {
+        nombre: "Estudiante de Prueba",
+        idioma: "Alemán",
+        nivel: "A1.1",
+        horario: "Martes y Jueves 18:30 - 20:00",
+        plazo: CFG_CONF.defaultPaymentDeadline,
+        discountCode: "TEST-CODE-123",
+        paymentUrl: CFG_CONF.paymentBaseUrl
+    };
+
+    const htmlBody = buildHtmlBody_Conf_(fakeData);
+    const plainBody = buildPlainTextBody_Conf_(fakeData);
+    const subject = "[PRUEBA] " + CFG_CONF.subjectTemplate(fakeData.idioma, fakeData.nivel);
+
+    // CCs de prueba
+    const ccEmails = determineCCs_(fakeData.idioma);
+
+    GmailApp.sendEmail(activeUser, subject, plainBody, {
+        htmlBody: htmlBody,
+        name: CFG_CONF.senderName,
+        cc: ccEmails
+    });
+    Logger.log(`Correo de prueba enviado a ${activeUser} con copia a: ${ccEmails}`);
+}
+
+/**
+ * Crea un BORRADOR REAL del primer correo pendiente.
+ * Útil para verificar diseño y datos exactamente como se enviarán.
+ */
+function createDraftOfFirstPending() {
+    const sh = getSheet_Conf_();
+    const { headers, col } = getHeaderIndexes_Conf_(sh);
+    const statusColIdx = ensureStatusColumn_Conf_(sh, headers, HEADERS_CONF.estado);
+
+    const data = sh.getDataRange().getValues();
+    for (let r = 1; r < data.length; r++) {
+        const row = data[r];
+        const status = (row[statusColIdx - 1] || "").toString();
+
+        if (!status) { // Primera fila vacía
+            const nombre = safeCell_Conf_(row, col.nombre);
+            const correo = safeCell_Conf_(row, col.correo);
+            const idioma = safeCell_Conf_(row, col.idioma);
+            const nivel = safeCell_Conf_(row, col.nivel);
+            const horario = safeCell_Conf_(row, col.horario);
+            const plazoRaw = safeCell_Conf_(row, col.plazo);
+            const esContinuacion = safeCell_Conf_(row, col.es_continuacion).toLowerCase().includes("si");
+
+            const plazo = plazoRaw || CFG_CONF.defaultPaymentDeadline;
+            const discountCode = determineDiscountCode_(correo, idioma, esContinuacion);
+            const ccEmails = determineCCs_(idioma);
+
+            const htmlBody = buildHtmlBody_Conf_({
+                nombre, idioma, nivel, horario, plazo, discountCode, paymentUrl: CFG_CONF.paymentBaseUrl
+            });
+            const plainBody = buildPlainTextBody_Conf_({
+                nombre, idioma, nivel, horario, plazo, discountCode, paymentUrl: CFG_CONF.paymentBaseUrl
+            });
+
+            GmailApp.createDraft(correo, CFG_CONF.subjectTemplate(idioma, nivel), plainBody, {
+                htmlBody: htmlBody,
+                name: CFG_CONF.senderName,
+                cc: ccEmails
+            });
+
+            Logger.log(`Borrador creado para ${correo} (Fila ${r + 1})`);
+            return;
+        }
+    }
+    Logger.log("No hay filas pendientes para crear borrador.");
+}
+
+/**
+ * Previsualiza el primer correo pendiente en los Logs.
+ */
+function previewOneConfirmation() {
+    const sh = getSheet_Conf_();
+    const { headers, col } = getHeaderIndexes_Conf_(sh);
+    const statusColIdx = ensureStatusColumn_Conf_(sh, headers, HEADERS_CONF.estado);
+
+    const data = sh.getDataRange().getValues();
+    for (let r = 1; r < data.length; r++) {
+        const row = data[r];
+        const status = (row[statusColIdx - 1] || "").toString();
+
+        if (!status) { // Primera fila vacía
+            const nombre = safeCell_Conf_(row, col.nombre);
+            const correo = safeCell_Conf_(row, col.correo);
+            const idioma = safeCell_Conf_(row, col.idioma);
+            const nivel = safeCell_Conf_(row, col.nivel);
+            const horario = safeCell_Conf_(row, col.horario);
+            const plazoRaw = safeCell_Conf_(row, col.plazo);
+            const esContinuacion = safeCell_Conf_(row, col.es_continuacion).toLowerCase().includes("si");
+
+            const plazo = plazoRaw || CFG_CONF.defaultPaymentDeadline;
+            const discountCode = determineDiscountCode_(correo, idioma, esContinuacion);
+            const ccEmails = determineCCs_(idioma);
+
+            Logger.log("--- PREVIEW ---");
+            Logger.log(`Destinatario: ${correo}`);
+            Logger.log(`CC: ${ccEmails}`);
+            Logger.log(`Código Descuento: ${discountCode}`);
+
+            const html = buildHtmlBody_Conf_({
+                nombre, idioma, nivel, horario, discountCode, paymentUrl: CFG_CONF.paymentBaseUrl
+            });
+            Logger.log("HTML Body:");
+            Logger.log(html);
+            return;
+        }
+    }
+    Logger.log("No hay filas pendientes para previsualizar.");
+}
+
+/***** LÓGICA DE NEGOCIO *****/
+
+function isPucvEmail_(email) {
+    return email.endsWith("@pucv.cl") || email.endsWith("@mail.pucv.cl");
+}
+
+function isGerman_(idioma) {
+    return idioma.toLowerCase().includes("alemán") || idioma.toLowerCase().includes("aleman");
+}
+
+function determineDiscountCode_(email, idioma, esContinuacion) {
+    const isPucv = isPucvEmail_(email);
+    const isGerman = isGerman_(idioma);
+
+    if (isGerman) {
+        if (isPucv && esContinuacion) {
+            return CFG_CONF.discounts.german_continuation_pucv;
+        }
+        return CFG_CONF.discounts.german;
+    }
+
+    if (isPucv) {
+        return CFG_CONF.discounts.pucv;
+    }
+
+    return CFG_CONF.discounts.base;
+}
+
+function determineCCs_(idioma) {
+    const idiomaNormalizado = idioma.toLowerCase();
+
+    // Buscar coincidencia en las llaves del mapa de CCs
+    for (const key in CFG_CONF.ccs) {
+        if (key !== "default" && idiomaNormalizado.includes(key)) {
+            return CFG_CONF.ccs[key];
+        }
+    }
+    return CFG_CONF.ccs["default"] || "";
+}
+
+/***** HELPERS *****/
+function getSheet_Conf_() {
+    const ss = SpreadsheetApp.openById(CFG_CONF.spreadsheetId);
+    let sh = ss.getSheetByName(CFG_CONF.sheetName);
+    if (!sh) sh = ss.getSheets()[0];
+    return sh;
+}
+
+function getHeaderIndexes_Conf_(sh) {
+    const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+    const col = {};
+    const lowerHeaders = headers.map(h => h.toLowerCase().trim());
+
+    Object.keys(HEADERS_CONF).forEach(k => {
+        const target = HEADERS_CONF[k];
+        const idx = lowerHeaders.findIndex(h => h.includes(target));
+        col[k] = idx;
+    });
+    return { headers, col };
+}
+
+function ensureStatusColumn_Conf_(sh, headers, name) {
+    const lower = name.toLowerCase();
+    let idx = headers.findIndex(h => h.toLowerCase().includes(lower));
+    if (idx === -1) {
+        idx = headers.length;
+        sh.getRange(1, idx + 1).setValue(name);
+    }
+    return idx + 1;
+}
+
+function safeCell_Conf_(row, idx) {
+    return (idx !== undefined && idx >= 0) ? (row[idx] || "").toString().trim() : "";
+}
+
+/***** PLANTILLAS *****/
+
+function buildHtmlBody_Conf_({ nombre, idioma, nivel, horario, plazo, discountCode, paymentUrl }) {
+    const colorPrimary = "#003057";
+    const colorBg = "#f4f4f4";
+    const firstName = nombre.split(" ")[0];
+
+    return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <style>
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; font-family: 'Helvetica Neue', Arial, sans-serif; color: #333; border: 1px solid #e0e0e0; }
+        .header { background-color: ${colorPrimary}; color: white; padding: 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; }
+        .content { padding: 30px; line-height: 1.6; }
+        .box { background-color: #f8f9fa; border-left: 4px solid ${colorPrimary}; padding: 15px; margin: 20px 0; }
+        .code-box { background-color: #eef2f5; border: 1px dashed ${colorPrimary}; padding: 15px; text-align: center; margin: 20px 0; font-size: 18px; }
+        .btn { display: inline-block; background-color: ${colorPrimary}; color: white !important; text-decoration: none; padding: 12px 25px; border-radius: 4px; font-weight: bold; }
+        .footer { background-color: #f4f4f4; color: #666; font-size: 12px; padding: 20px; text-align: center; border-top: 1px solid #e0e0e0; }
+    </style>
+    </head>
+    <body style="margin:0; padding:20px; background-color:${colorBg};">
+        <div class="container">
+            <!-- Encabezado Institucional -->
+            <div class="header">
+                <h1>PROGRAMA IDIOMAS PUCV</h1>
+            </div>
+            
+            <div class="content">
+                <p>Hola <strong>${firstName}</strong>,</p>
+                <p>Te confirmamos que el curso de <strong>${idioma} ${nivel || ""}</strong> ha alcanzado el quórum necesario y se impartirá en el siguiente horario:</p>
+                
+                    <strong>Horario Confirmado:</strong><br>
+                    ${horario}
+                </div>
+
+                <p>Para finalizar tu inscripción, por favor procede con el pago utilizando el siguiente enlace y código de descuento, a más tardar el <span class="deadline" style="color: #d32f2f; font-weight: bold;">${plazo}</span>:</p>
+
+                <div class="code-box">
+                    Tu código de descuento:<br>
+                    <strong style="color: ${colorPrimary}; font-size: 24px;">${discountCode}</strong>
+                </div>
+
+                <div style="text-align: center;">
+                    <a href="${paymentUrl}" class="btn">Ir a Pagar</a>
+                </div>
+                
+                <p style="font-size: 13px; margin-top: 20px; color: #666;">
+                    * Si eres comunidad PUCV y no usaste tu correo institucional, recuerda que debes enviar un certificado de alumno regular o contrato para validar tu descuento, si corresponde.
+                </p>
+            </div>
+            
+            <div class="footer">
+                <p><strong>Programa Idiomas PUCV</strong><br>
+                Dirección General de Asuntos Internacionales<br>
+                Pontificia Universidad Católica de Valparaíso</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    `;
+}
+
+function buildPlainTextBody_Conf_({ nombre, idioma, nivel, horario, plazo, discountCode, paymentUrl }) {
+    return `Hola ${nombre},
+
+Confirmamos la apertura del curso de ${idioma} ${nivel || ""}.
+
+Horario: ${horario}
+
+Por favor procede al pago antes del ${plazo}.
+Enlace: ${paymentUrl}
+Usa este código de descuento: ${discountCode}
+
+Saludos,
+Programa Idiomas PUCV
+    `;
+}
