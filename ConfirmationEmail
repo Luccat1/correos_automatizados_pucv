@@ -19,7 +19,7 @@ const CFG_CONF = {
     paymentBaseUrl: "https://vaf.ucv.cl:8446/PortalEventos/evento.jsp?id=1521",
 
     // Plazo de pago por defecto (se usa si la columna 'plazo' está vacía)
-    defaultPaymentDeadline: "jueves 19 de diciembre a las 12:00 hrs",
+    defaultPaymentDeadline: "viernes 19 de diciembre a las 12:00 hrs",
 
     // Códigos de Descuento
     discounts: {
@@ -100,13 +100,13 @@ function sendConfirmationEmails() {
             const ccEmails = determineCCs_(idioma);
 
             // 3. Construir Correo
+            // 3. Construir Correo
             const htmlBody = buildHtmlBody_Conf_({
                 nombre,
                 idioma,
                 nivel,
                 horario,
                 plazo,
-                discountCode,
                 paymentUrl: CFG_CONF.paymentBaseUrl
             });
 
@@ -116,7 +116,6 @@ function sendConfirmationEmails() {
                 nivel,
                 horario,
                 plazo,
-                discountCode,
                 paymentUrl: CFG_CONF.paymentBaseUrl
             });
 
@@ -162,7 +161,6 @@ function sendGenericTestEmail_Conf() {
         nivel: "A1.1",
         horario: "Martes y Jueves 18:30 - 20:00",
         plazo: CFG_CONF.defaultPaymentDeadline,
-        discountCode: "TEST-CODE-123",
         paymentUrl: CFG_CONF.paymentBaseUrl
     };
 
@@ -209,10 +207,10 @@ function createDraftOfFirstPending() {
             const ccEmails = determineCCs_(idioma);
 
             const htmlBody = buildHtmlBody_Conf_({
-                nombre, idioma, nivel, horario, plazo, discountCode, paymentUrl: CFG_CONF.paymentBaseUrl
+                nombre, idioma, nivel, horario, plazo, paymentUrl: CFG_CONF.paymentBaseUrl
             });
             const plainBody = buildPlainTextBody_Conf_({
-                nombre, idioma, nivel, horario, plazo, discountCode, paymentUrl: CFG_CONF.paymentBaseUrl
+                nombre, idioma, nivel, horario, plazo, paymentUrl: CFG_CONF.paymentBaseUrl
             });
 
             GmailApp.createDraft(correo, CFG_CONF.subjectTemplate(idioma, nivel), plainBody, {
@@ -257,10 +255,9 @@ function previewOneConfirmation() {
             Logger.log("--- PREVIEW ---");
             Logger.log(`Destinatario: ${correo}`);
             Logger.log(`CC: ${ccEmails}`);
-            Logger.log(`Código Descuento: ${discountCode}`);
 
             const html = buildHtmlBody_Conf_({
-                nombre, idioma, nivel, horario, discountCode, paymentUrl: CFG_CONF.paymentBaseUrl
+                nombre, idioma, nivel, horario, plazo, paymentUrl: CFG_CONF.paymentBaseUrl
             });
             Logger.log("HTML Body:");
             Logger.log(html);
@@ -347,7 +344,7 @@ function safeCell_Conf_(row, idx) {
 
 /***** PLANTILLAS *****/
 
-function buildHtmlBody_Conf_({ nombre, idioma, nivel, horario, plazo, discountCode, paymentUrl }) {
+function buildHtmlBody_Conf_({ nombre, idioma, nivel, horario, plazo, paymentUrl }) {
     const colorPrimary = "#003057";
     const colorBg = "#f4f4f4";
     const firstName = nombre.split(" ")[0];
@@ -382,11 +379,11 @@ function buildHtmlBody_Conf_({ nombre, idioma, nivel, horario, plazo, discountCo
                     ${horario}
                 </div>
 
-                <p>Para finalizar tu inscripción, por favor procede con el pago utilizando el siguiente enlace y código de descuento, a más tardar el <span class="deadline" style="color: #d32f2f; font-weight: bold;">${plazo}</span>:</p>
-
-                <div class="code-box">
-                    Tu código de descuento:<br>
-                    <strong style="color: ${colorPrimary}; font-size: 24px;">${discountCode}</strong>
+                <p>Para finalizar tu inscripción, por favor procede con el pago utilizando el siguiente enlace a más tardar el <span class="deadline" style="color: #d32f2f; font-weight: bold;">${plazo}</span>.</p>
+                
+                <div class="box">
+                    <strong>Información Importante sobre el Código de Descuento:</strong><br>
+                    A tu correo llegará un <strong>código de descuento personalizado</strong> en un mensaje separado. Deberás usar ese código para aplicar tu tarifa correspondiente al momento de pagar.
                 </div>
 
                 <div style="text-align: center;">
@@ -409,7 +406,7 @@ function buildHtmlBody_Conf_({ nombre, idioma, nivel, horario, plazo, discountCo
     `;
 }
 
-function buildPlainTextBody_Conf_({ nombre, idioma, nivel, horario, plazo, discountCode, paymentUrl }) {
+function buildPlainTextBody_Conf_({ nombre, idioma, nivel, horario, plazo, paymentUrl }) {
     return `Hola ${nombre},
 
 Confirmamos la apertura del curso de ${idioma} ${nivel || ""}.
@@ -418,7 +415,8 @@ Horario: ${horario}
 
 Por favor procede al pago antes del ${plazo}.
 Enlace: ${paymentUrl}
-Usa este código de descuento: ${discountCode}
+
+IMPORTANTE: A tu correo llegará un código de descuento personalizado en un mensaje separado. Debes usarlo para pagar.
 
 Saludos,
 Programa Idiomas PUCV
