@@ -1,39 +1,41 @@
-# AGENTS.md
+# AGENTS.md — AI Context & Patterns
 
-## Project Context
+> Project: Unified Email System PUCV
 
-- **Type**: Google Apps Script (GAS) standalone project (bound to Google Sheets).
-- **Main Logic**: `ConfirmationEmail` (likely `Code.gs` in GAS) processes student registrations from a Google Sheet and sends confirmation emails with dynamic payment details and discount logic.
-- **Environment**: The code runs in the Google Apps Script environment attached to a Google Sheet.
+## Overview
 
-## Dev Environment Tips
+A robust, template-based email automation system for Google Apps Script. Designed for high reliability, institutional branding consistency, and ease of deployment.
 
-- **Files**:
-  - `ConfirmationEmail`: Contains the main logic for course confirmation emails.
-  - `Code Sending Script.json`: Appsscript configuration file.
-- **Syntax**: Standard JavaScript (ES6 supported by GAS).
-- **Libraries**: Uses `GmailApp`, `SpreadsheetApp`, and `Session` global services.
+## Architecture
 
-## Testing Instructions
+The project follows a modular 3-file structure for Google Apps Script bound scripts:
 
-- **Test Emails**:
-  - Use `sendGenericTestEmail_Conf()` to send a generated test email to the active user.
-  - Use `createDraftOfFirstPending()` to create a draft in Gmail for the first pending row in the sheet, allowing visual verification before sending.
-  - Use `previewOneConfirmation()` to log the HTML/Text body to the execution logs without sending anything.
-- **Manual Verification**:
-  - Check the "Confirmaciones" sheet (or defined `sheetName`).
-  - Columns expected: `nombre`, `correo`, `idioma`, `nivel`, `horario`, `plazo`, `es_continuacion`, `estado`.
-  - Verify that status columns are updated ("Enviado ...", "Borrador ...", "Error ...").
+1.  **`Core.gs`**: The engine. Handles low-level GAS API interactions (Gmail, Drive, Spreadsheet), HTML layout wrapping, and UI components.
+2.  **`Templates.gs`**: The registry. Uses a registration pattern to define email campaigns (`certificate`, `survey`, `confirmation`, etc.).
+3.  **`Main.gs`**: The controller. Manages user interactions via custom menus and coordinates data flow between the engine and templates.
 
-## Deployment Instructions
+## Core Patterns
 
-- **Manual Sync**:
-  1. Copy the content of the local file (`ConfirmationEmail`).
-  2. Paste it into the Google Apps Script editor.
-  3. Save and Refresh the Sheets tab if custom menus are used.
+- **Template Registry**: Templates are objects registered in a central registry. Each defines its own `processRow` and `buildHtml` logic.
+- **Header Mapping**: The system maps human-readable column headers to indices at runtime, allowing users to reorder columns safely.
+- **Idempotent Dispatch**: Uses a status column (configurable per template) to track progress and prevent duplicate sends.
+- **Centralized Config**: A "Config" sheet provides per-deployment overrides (e.g., which template to use, sender alias).
 
-## Code Conventions
+## Conventions
 
-- **Configuration**: Keep `CFG_CONF` at the top of the file for easy adjustment of IDs, Templates, and Logic.
-- **Logging**: Use `Logger.log()` or `console.log()` for output.
-- **Status Updates**: The script writes back to the sheet to prevent double-sending. Always ensure the "estado" column is respected.
+- **Language**: Core logic, functions, variables, and internal comments are in **English**. All user-facing strings (labels, alerts, email content) are in **Spanish**.
+- **Branding**: Fixed PUCV 100-year palette (Primary: `#24588d`). Logo in header is mandatory unless overridden by template config.
+- **Extensibility**: To add a template, follow the guide in `docs/CREATING_TEMPLATES.md`.
+
+## System Dependencies
+
+- Google Apps Script (V8 Engine)
+- Gmail API
+- Google Drive API
+- Spreadsheet API
+
+## Context for Future Agents
+
+- **Don't touch `Core.gs`** unless fixing a global engine bug.
+- **Add new templates to `Templates.gs`** using the `registerTemplate` function.
+- **Deployment is via copy-paste** — there is no CI/CD; documentation is the source of truth for setup.
