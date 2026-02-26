@@ -4,77 +4,65 @@ plan: 1
 wave: 1
 ---
 
-# Plan 3.1: onOpen Menu & Template Selection
+# Plan 3.1: Fallback Greeting & extractFirstName Enhancement
 
 ## Objective
-Create `src/Main.gs` with the `onOpen()` trigger that builds the Google Sheets custom menu and the template selection logic that determines which template to use for the current Sheet.
+
+When a recipient has no name, the system should produce a generic, polite greeting (e.g., "Estimado/a estudiante") instead of an empty or broken salutation. This requires updating `extractFirstName()` in `Core.gs` and ensuring all templates handle the fallback correctly.
 
 ## Context
-- .gsd/SPEC.md
-- .gsd/DECISIONS.md (ADR-001, Menu Options)
-- src/Core.gs — `buildMenu`, `confirmAction`, `showAlert`, `showResult`
-- src/Templates.gs — `getTemplate`, `listTemplates`
+
+- `src/Core.gs` — `extractFirstName()`
+- `src/Templates.gs` — all 7 templates' `buildHtml()`
 
 ## Tasks
 
 <task type="auto">
-  <name>Create Main.gs with onOpen and template selection</name>
-  <files>src/Main.gs</files>
+  <name>Enhance extractFirstName with fallback</name>
+  <files>src/Core.gs</files>
   <action>
-    Create `src/Main.gs` with:
-
-    1. **`_getConfig()`** — Private helper that reads template configuration from the active Sheet.
-       - Looks for a sheet named "Config" (case-insensitive) or uses PropertiesService.
-       - If a "Config" sheet exists, read key-value pairs from columns A and B:
-         - `template_id` — which template to use (e.g., 'certificate', 'survey')
-         - `sender_name` — override sender (optional)
-         - `sender_alias` — override alias (optional)
-         - `cc` — default CC (optional)
-         - `bcc` — default BCC (optional)
-         - Additional template-specific keys (e.g., `payment_url`, `deadline_text`, `survey_url`, `program_name`)
-       - Returns a config object `{ templateId, senderName, senderAlias, cc, bcc, extras: {} }`
-       - If no Config sheet exists, show error dialog and return null.
-
-    2. **`_getSelectedTemplate()`** — Gets the template from registry based on config.
-       - Calls `_getConfig()` to get templateId.
-       - Calls `getTemplate(templateId)` from Templates.gs.
-       - If template not found, shows error with available templates via `listTemplates()`.
-       - Returns `{ template, config }` or null on error.
-
-    3. **`onOpen()`** — The standard GAS trigger that creates the custom menu.
-       - Calls `buildMenu()` from Core.gs with user-approved items:
-         - `📧 Enviar Correos` → `menuSendEmails`
-         - `🧪 Enviar Prueba` → `menuSendTest`
-         - `👁 Vista Previa` → `menuPreview`
-         - separator
-         - `📝 Crear Borradores` → `menuCreateDrafts`
-         - separator
-         - `ℹ️ Ver Configuración` → `menuShowConfig`
-       - All function names reference functions in Main.gs (Plan 3.2).
-
-    Code language: English. User-facing strings: Spanish.
-    Do NOT implement the menu handler functions yet (menuSendEmails, etc.) — those are Plan 3.2.
-    Create stub declarations for them so GAS doesn't error on menu click:
+    Update `extractFirstName(fullName)` to accept an optional second parameter `fallback`:
+    ```javascript
+    function extractFirstName(fullName, fallback) {
+      if (!fullName || !fullName.toString().trim()) return fallback || "";
+      const parts = fullName.toString().trim().split(/\s+/);
+      return parts[0];
+    }
     ```
-    function menuSendEmails() {}
-    function menuSendTest() {}
-    function menuPreview() {}
-    function menuCreateDrafts() {}
-    function menuShowConfig() {}
-    ```
+    This preserves backward compatibility (existing callers without fallback still get empty string).
   </action>
-  <verify>
-    Open `src/Main.gs` and verify:
-    - `onOpen` calls `buildMenu` with correct items
-    - `_getConfig` reads from a "Config" sheet
-    - `_getSelectedTemplate` resolves template from registry
-    - All 5 menu handler stubs exist
-  </verify>
-  <done>Main.gs exists with onOpen, config reader, template selector, and 5 menu stubs</done>
+  <verify>Function signature includes fallback parameter</verify>
+  <done>`extractFirstName("", "estudiante")` returns "estudiante"; `extractFirstName("Juan Pérez")` returns "Juan"</done>
+</task>
+
+<task type="auto">
+  <name>Update all templates to use fallback greetings</name>
+  <files>src/Templates.gs</files>
+  <action>
+    For each template, update how `firstName` is computed in `processRow`:
+
+    1. **certificate** (line ~91): `firstName: extractFirstName(nombre, "estudiante")`
+    2. **confirmation** (line ~164): `firstName: extractFirstName(nombre, "estudiante")`
+    3. **payment_reminder** (line ~221): `firstName: extractFirstName(nombre, "estudiante")`
+    4. **placement_test** (line ~278): `firstName: extractFirstName(nombre, "estudiante")`
+    5. **code_delivery** (line ~341): `firstName: extractFirstName(nombre, "estudiante")`
+    6. **report_delivery** (line ~428): Already uses full professorName in greeting — no change needed
+    7. **survey** (line ~475): `firstName: extractFirstName(nombre, "estudiante")`
+
+    Also update each `buildHtml` vocative to handle the fallback. Pattern:
+    - When firstName was extracted from a real name: `"Estimado(a) <strong>Juan</strong>:"`
+    - When firstName is the fallback "estudiante": `"Estimado/a estudiante:"`
+
+    The simplest approach: in `buildHtml`, check if data.nombre is populated. If it is, use `"Estimado(a) <strong>${data.firstName}</strong>:"`. If not, use `"Estimado/a estudiante:"`.
+
+    AVOID: Changing report_delivery — it uses `data.professorName` directly and always requires a name.
+  </action>
+  <verify>All 6 applicable templates have fallback greetings</verify>
+  <done>Templates produce "Estimado/a estudiante:" when the nombre field is empty</done>
 </task>
 
 ## Success Criteria
-- [ ] `src/Main.gs` exists
-- [ ] `onOpen()` creates menu with 5 items and 2 separators
-- [ ] `_getConfig()` can read template_id from a Config sheet
-- [ ] `_getSelectedTemplate()` resolves the template from registry
+
+- [ ] `extractFirstName` accepts a fallback parameter
+- [ ] All templates except report_delivery use fallback "estudiante"
+- [ ] Greeting is "Estimado/a estudiante:" when name is missing
