@@ -109,5 +109,131 @@ const certificateTemplate = {
   }
 };
 
-// Register the template
+/**
+ * Confirmation Template
+ * Handles course opening confirmations with dynamic CCs and discount codes.
+ */
+const confirmationTemplate = {
+  id: 'confirmation',
+  name: 'Confirmación de Apertura',
+  requiredHeaders: ['nombre', 'correo', 'idioma', 'nivel', 'horario'],
+  senderName: 'Programa Idiomas PUCV',
+  statusColumn: 'Estado',
+  headerTitle: 'CONFIRMACIÓN DE APERTURA DE CURSO',
+  footerLines: ['Programa Idiomas PUCV', 'Dirección General de Asuntos Internacionales', 'PUCV'],
+  
+  // Default configurations that can be overridden by data
+  defaults: {
+    paymentUrl: "https://vaf.ucv.cl:8446/PortalEventos/evento.jsp?id=1521",
+    paymentDeadline: "el domingo a las 23:59 hrs",
+    ccMapping: {
+      "alemán": "alina.neumeyer@pucv.cl, jana.strohbach@pucv.cl, idiomas@pucv.cl",
+      "inglés": "idiomas@pucv.cl",
+      "default": "idiomas@pucv.cl"
+    }
+  },
+
+  processRow: function(row, headers, rowIndex) {
+    const nombre = requiredCell(row, headers['nombre'], 'Nombre', rowIndex);
+    const correo = requiredCell(row, headers['correo'], 'Correo', rowIndex);
+    const idioma = requiredCell(row, headers['idioma'], 'Idioma', rowIndex);
+    const nivel = requiredCell(row, headers['nivel'], 'Nivel', rowIndex);
+    const horario = requiredCell(row, headers['horario'], 'Horario', rowIndex);
+    const plazo = safeCell(row, headers['plazo']);
+    const esContinuacion = safeCell(row, headers['es_continuacion']);
+
+    // Determine CC based on language
+    const langKey = idioma.toLowerCase();
+    let cc = this.defaults.ccMapping['default'];
+    for (const key in this.defaults.ccMapping) {
+      if (langKey.includes(key)) {
+        cc = this.defaults.ccMapping[key];
+        break;
+      }
+    }
+
+    return {
+      nombre, correo, idioma, nivel, horario,
+      plazo: plazo || this.defaults.paymentDeadline,
+      esContinuacion,
+      firstName: extractFirstName(nombre),
+      cc
+    };
+  },
+
+  buildHtml: function(data) {
+    let content = `<p>Estimado(a) <strong>${data.firstName}</strong>,</p>`;
+    content += `<p>Nos complace saludarte y confirmarte la <strong>apertura del curso</strong> en el cual te has preinscrito:</p>`;
+    
+    const courseInfo = `<strong>Idioma:</strong> ${data.idioma}<br><strong>Nivel:</strong> ${data.nivel}<br><strong>Horario:</strong> ${data.horario}`;
+    content += buildInfoBox(courseInfo);
+
+    content += `<p>Para asegurar tu cupo, te solicitamos realizar el pago correspondiente antes de <strong>${data.plazo}</strong>.</p>`;
+    
+    if (data.discountCode) {
+      content += buildWarningBox(`<strong>Código de Descuento:</strong> ${data.discountCode}<br>Por favor, ingrésalo al momento de pagar para aplicar tu tarifa preferencial.`);
+    }
+
+    content += buildButton("Ir al Portal de Pagos", data.paymentUrl || this.defaults.paymentUrl);
+    content += `<p>Si tienes dificultades con el proceso de pago, por favor responde a este correo adjuntando una captura de pantalla del error.</p>`;
+    content += `<p>¡Te esperamos!</p>`;
+
+    return content;
+  }
+};
+
+/**
+ * Payment Reminder Template
+ * Urgent notice about payment deadlines.
+ */
+const paymentReminderTemplate = {
+  id: 'payment_reminder',
+  name: 'Recordatorio de Pago',
+  requiredHeaders: ['nombre', 'correo', 'idioma', 'nivel'],
+  senderName: 'Programa Idiomas PUCV',
+  statusColumn: 'Estado Recordatorio',
+  headerTitle: 'RECORDATORIO DE PAGO',
+  footerLines: ['Programa Idiomas PUCV', 'PUCV'],
+  
+  defaults: {
+    deadlineText: "viernes a las 12:00 hrs",
+    paymentUrl: "https://vaf.ucv.cl:8446/PortalEventos/evento.jsp?id=1521"
+  },
+
+  processRow: function(row, headers, rowIndex) {
+    const nombre = requiredCell(row, headers['nombre'], 'Nombre', rowIndex);
+    const correo = requiredCell(row, headers['correo'], 'Correo', rowIndex);
+    const idioma = safeCell(row, headers['idioma']);
+    const nivel = safeCell(row, headers['nivel']);
+
+    return {
+      nombre, correo, idioma, nivel,
+      firstName: extractFirstName(nombre)
+    };
+  },
+
+  buildHtml: function(data) {
+    const deadline = data.deadlineText || this.defaults.deadlineText;
+    const url = data.paymentUrl || this.defaults.paymentUrl;
+
+    let content = `<p>Hola <strong>${data.firstName}</strong>,</p>`;
+    content += `<p>Te contactamos de manera <strong>urgente</strong> para recordarte que el plazo para la reserva de tu cupo en los cursos de idiomas vence impostergablemente este <strong>${deadline}</strong>.</p>`;
+    
+    content += buildButton("Pagar con Webpay", url);
+
+    content += buildWarningBox(`<strong>Importante:</strong> Si el pago no se registra antes del plazo señalado, el sistema liberará automáticamente tu cupo para los estudiantes en lista de espera.`);
+
+    content += `<p>Si ya realizaste el pago, por favor desestima este mensaje. En caso de dudas, puedes contactarnos directamente.</p>`;
+    content += `<p>Saludos cordiales,<br>Programa Idiomas PUCV</p>`;
+
+    return {
+      content: content,
+      alertBand: `🚨 ¡ÚLTIMO PLAZO! Pago vence el ${deadline}`
+    };
+  }
+};
+
+// Register the templates
 registerTemplate(certificateTemplate);
+registerTemplate(confirmationTemplate);
+registerTemplate(paymentReminderTemplate);
