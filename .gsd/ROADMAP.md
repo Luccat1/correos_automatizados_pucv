@@ -39,8 +39,8 @@
 - Menú reorganizado con submenús para Configuración y Herramientas
 
 ### Phase 3: Template Copy Revision
-**Status**: ⬜ Not Started
-**Objective**: Revisar la redacción de las 7 plantillas para calidad institucional.
+**Status**: ✅ Complete
+Revision of all template copies for institutional tone. Standardized greetings and improved phrasing.
 **Delivers**:
 - Vocativos con dos puntos ("Estimado/a X:")
 - Fallback `extractFirstName()` → "Estimado/a estudiante" si no hay nombre

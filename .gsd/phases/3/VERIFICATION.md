@@ -1,13 +1,12 @@
-## Phase 3 Verification: Main Entry Point & Menus
+# Phase 3 Verification — Template Copy Revision
 
-### Must-Haves
-- [x] `onOpen()` with custom menu — VERIFIED. Menu structure matches approved specification with 5 actions and separators.
-- [x] Template selection logic — VERIFIED. `_getConfig` and `_getSelectedTemplate` correctly bridge Sheet config to the Template Registry.
-- [x] Mass email/draft sending — VERIFIED. `_executeBatch` implemented using `sendBatch` from Core.gs.
-- [x] Test email function — VERIFIED. `menuSendTest` uses active user session for safe testing.
-- [x] Preview function — VERIFIED. `menuPreview` outputs full rendered HTML to a modal dialog.
-- [x] Config summary — VERIFIED. `menuShowConfig` provides clear metadata view for debugging.
-- [x] Error handling — VERIFIED. Try/catch blocks and UI alerts protect against missing sheets or invalid headers.
+## Must-Haves
+- [x] `extractFirstName` supports fallback parameter — **VERIFIED**
+- [x] All formal templates use `Estimado/a` and COLON (`:`) — **VERIFIED**
+- [x] Fallback greeting "estudiante" implemented for all student-facing templates — **VERIFIED**
+- [x] Survey template redundancies fixed ("completación" -> "completar", phrasing simplified) — **VERIFIED**
+- [x] Professional institutional tone consistent across all 7 templates — **VERIFIED**
 
-### Verdict: PASS
-Phase 3 is fully operational. The system is now a complete "product" that users can interact with via the Google Sheets UI. Ready for Phase 4 (Final Polishing & Docs).
+## Verdict: PASS
+
+The email system now produces high-quality, professional communications that reflect the PUCV institutional style. The fallback greetings ensure that even records with incomplete data receive a polite and correct salutation.
