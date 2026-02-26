@@ -465,7 +465,7 @@ function buildMenu(menuItems) {
   const menu = ui.createMenu('📧 Correos PUCV');
   
   menuItems.forEach(item => {
-    if (item.separator) {
+    if (!item || item.separator) {
       menu.addSeparator();
     } else {
       menu.addItem(item.label, item.functionName);

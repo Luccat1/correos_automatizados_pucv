@@ -113,14 +113,18 @@ function menuSendTest() {
     const body = isObject ? innerHtml.content : innerHtml;
     const alertBand = isObject ? innerHtml.alertBand : null;
 
-    const fullHtml = buildEmailLayout(body, {
-      title: template.headerTitle,
+    const fullHtml = buildEmailLayout({
+      content: body,
+      headerTitle: template.headerTitle,
       footerLines: template.footerLines,
       alertBand: alertBand
     });
 
     const testEmail = Session.getActiveUser().getEmail();
-    sendEmail(testEmail, `[PRUEBA] ${template.headerTitle}`, fullHtml, {
+    sendEmail({
+      to: testEmail,
+      subject: `[PRUEBA] ${template.headerTitle}`,
+      htmlBody: fullHtml,
       senderName: config.senderName || template.senderName,
       senderAlias: config.senderAlias || template.senderAlias
     });
@@ -158,8 +162,9 @@ function menuPreview() {
     const body = isObject ? innerHtml.content : innerHtml;
     const alertBand = isObject ? innerHtml.alertBand : null;
 
-    const fullHtml = buildEmailLayout(body, {
-      title: template.headerTitle,
+    const fullHtml = buildEmailLayout({
+      content: body,
+      headerTitle: template.headerTitle,
       footerLines: template.footerLines,
       alertBand: alertBand
     });
@@ -211,7 +216,7 @@ function _executeBatch(asDraft) {
 
   // Confirmation
   const actionName = asDraft ? 'crear borradores' : 'enviar correos masivos';
-  if (!confirmAction(`¿Está seguro que desea ${actionName} usando la plantilla "${template.name}"?`)) {
+  if (!confirmAction('Confirmar Acción', `¿Está seguro que desea ${actionName} usando la plantilla "${template.name}"?`)) {
     return;
   }
 
@@ -225,7 +230,7 @@ function _executeBatch(asDraft) {
     }
   }
 
-  const statusCol = ensureColumn(sheet, template.statusColumn);
+  const statusCol = ensureColumn(sheet, headers, template.statusColumn || 'Estado_Envio');
   const dataRange = sheet.getDataRange();
   const values = dataRange.getValues();
   const rows = values.slice(1); // Skip header
@@ -248,8 +253,9 @@ function _executeBatch(asDraft) {
       const body = isObject ? innerHtml.content : innerHtml;
       const alertBand = isObject ? innerHtml.alertBand : null;
 
-      const fullHtml = buildEmailLayout(body, {
-        title: template.headerTitle,
+      const fullHtml = buildEmailLayout({
+        content: body,
+        headerTitle: template.headerTitle,
         footerLines: template.footerLines,
         alertBand: alertBand
       });
@@ -283,10 +289,10 @@ function _executeBatch(asDraft) {
   const results = sendBatch(rows, processFn, options);
 
   // Update statuses
-  const statusValues = results.statuses.map(s => [s]);
-  batchUpdateColumn(sheet, statusCol, 2, statusValues);
+  // statuses are already [[val], [val], ...] from sendBatch
+  batchUpdateColumn(sheet, 2, statusCol, results.statuses);
 
-  showResult(results);
+  showResult(results.processed, results.errors);
 }
 
 /**
