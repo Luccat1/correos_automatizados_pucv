@@ -1,3 +1,8 @@
 # TODO
 
-- [ ] Ordenar la carpeta, limpiar archivos innecesarios y preparar todo para subirlo a GitHub `medium` — 2026-02-26
+- [x] Ordenar la carpeta, limpiar archivos innecesarios y preparar todo para subirlo a GitHub `medium` — 2026-02-26
+- [ ] Incluir función para generar y configurar hojas automáticamente `medium` — 2026-02-26
+- [ ] Fallback de saludo: si no hay nombre del destinatario, usar redacción generalizada (ej: "Estimado/a estudiante") en vez de dejar vacío `medium` — 2026-02-26
+- [ ] Revisar redacción de todas las plantillas: corregir redundancias (ej: "curso que estás cursando"), usar dos puntos después de vocativos ("Estimado/a X:"), y alinear tono con el estilo institucional de IDIOMAS PUCV (ver ejemplo de campaña inscripciones 1er sem 2026) `high` — 2026-02-26
+- [ ] Selector de plantilla + auto-generación de hoja: menú que liste los templates disponibles, y al elegir uno genere automáticamente la hoja Config + hoja de datos con las cabeceras requeridas. Incluir en la Config claves para parámetros configurables de cada template (ej: `survey_url`, `extra_note` para mensajes adicionales como "complete la encuesta para recibir certificado"). Resolver que actualmente no es claro dónde poner la URL de la encuesta ni el mensaje adicional en el template `survey` `high` — 2026-02-26
+- [ ] Mejorar la GUI del menú: (1) permitir editar partes del mensaje antes de enviar (ej: nota adicional, asunto) desde un diálogo HTML, (2) que el script detecte automáticamente la hoja de datos asociada al template (por nombre o por Config) sin depender de que el usuario esté en la hoja activa correcta, (3) en general aprovechar más las posibilidades de UI del menú de Google Sheets `high` — 2026-02-26

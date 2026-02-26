@@ -58,6 +58,7 @@ const certificateTemplate = {
   id: 'certificate',
   name: 'Envío de Certificados',
   requiredHeaders: ['nombre', 'correo', 'enlace'],
+  configKeys: ['program_name'],
   senderName: 'PUCV',
   statusColumn: 'Estado',
   headerTitle: 'ENVÍO DE CERTIFICADOS',
@@ -70,7 +71,7 @@ const certificateTemplate = {
    * @param {number} rowIndex - 1-based row index.
    * @returns {Object|null}
    */
-  processRow: function(row, headers, rowIndex) {
+  processRow: function(row, headers, rowIndex, extraData) {
     const nombre = requiredCell(row, headers['nombre'], 'Nombre', rowIndex);
     const apellido = safeCell(row, headers['apellido']);
     const correo = requiredCell(row, headers['correo'], 'Correo', rowIndex);
@@ -87,7 +88,8 @@ const certificateTemplate = {
       apellido: apellido,
       correo: correo,
       certificateUrl: enlace,
-      firstName: extractFirstName(nombre)
+      firstName: extractFirstName(nombre),
+      programName: (extraData && extraData.configExtras && extraData.configExtras.program_name) || this.defaults?.programName
     };
   },
 
@@ -99,7 +101,7 @@ const certificateTemplate = {
   buildHtml: function(data) {
     const programName = data.programName || "un programa académico";
     
-    let content = `<p>Estimado(a) <strong>${data.firstName}</strong>,</p>`;
+    let content = `<p>Estimado(a) <strong>${data.firstName}</strong>:</p>`;
     content += `<p>Nos complace saludarte e informarte que tu certificado de finalización de <strong>${programName}</strong> ya se encuentra disponible.</p>`;
     content += buildButton("Ver Certificado", data.certificateUrl);
     content += buildInfoBox("Para una mejor visualización, te recomendamos abrir el enlace desde un computador. Si tienes problemas para acceder, asegúrate de estar usando el correo electrónico registrado.");
@@ -117,6 +119,7 @@ const confirmationTemplate = {
   id: 'confirmation',
   name: 'Confirmación de Apertura',
   requiredHeaders: ['nombre', 'correo', 'idioma', 'nivel', 'horario'],
+  configKeys: ['payment_url', 'payment_deadline', 'discount_code'],
   senderName: 'Programa Idiomas PUCV',
   statusColumn: 'Estado',
   headerTitle: 'CONFIRMACIÓN DE APERTURA DE CURSO',
@@ -133,7 +136,7 @@ const confirmationTemplate = {
     }
   },
 
-  processRow: function(row, headers, rowIndex) {
+  processRow: function(row, headers, rowIndex, extraData) {
     const nombre = requiredCell(row, headers['nombre'], 'Nombre', rowIndex);
     const correo = requiredCell(row, headers['correo'], 'Correo', rowIndex);
     const idioma = requiredCell(row, headers['idioma'], 'Idioma', rowIndex);
@@ -152,12 +155,16 @@ const confirmationTemplate = {
       }
     }
 
+    const extras = extraData ? extraData.configExtras : {};
+
     return {
       nombre, correo, idioma, nivel, horario,
-      plazo: plazo || this.defaults.paymentDeadline,
+      plazo: plazo || extras.payment_deadline || this.defaults.paymentDeadline,
       esContinuacion,
       firstName: extractFirstName(nombre),
-      cc
+      cc,
+      paymentUrl: extras.payment_url || this.defaults.paymentUrl,
+      discountCode: extras.discount_code || null
     };
   },
 
@@ -174,7 +181,7 @@ const confirmationTemplate = {
       content += buildWarningBox(`<strong>Código de Descuento:</strong> ${data.discountCode}<br>Por favor, ingrésalo al momento de pagar para aplicar tu tarifa preferencial.`);
     }
 
-    content += buildButton("Ir al Portal de Pagos", data.paymentUrl || this.defaults.paymentUrl);
+    content += buildButton("Ir al Portal de Pagos", data.paymentUrl);
     content += `<p>Si tienes dificultades con el proceso de pago, por favor responde a este correo adjuntando una captura de pantalla del error.</p>`;
     content += `<p>¡Te esperamos!</p>`;
 
@@ -190,6 +197,7 @@ const paymentReminderTemplate = {
   id: 'payment_reminder',
   name: 'Recordatorio de Pago',
   requiredHeaders: ['nombre', 'correo', 'idioma', 'nivel'],
+  configKeys: ['deadline_text', 'payment_url'],
   senderName: 'Programa Idiomas PUCV',
   statusColumn: 'Estado Recordatorio',
   headerTitle: 'RECORDATORIO DE PAGO',
@@ -200,23 +208,27 @@ const paymentReminderTemplate = {
     paymentUrl: "https://vaf.ucv.cl:8446/PortalEventos/evento.jsp?id=1521"
   },
 
-  processRow: function(row, headers, rowIndex) {
+  processRow: function(row, headers, rowIndex, extraData) {
     const nombre = requiredCell(row, headers['nombre'], 'Nombre', rowIndex);
     const correo = requiredCell(row, headers['correo'], 'Correo', rowIndex);
     const idioma = safeCell(row, headers['idioma']);
     const nivel = safeCell(row, headers['nivel']);
 
+    const extras = extraData ? extraData.configExtras : {};
+
     return {
       nombre, correo, idioma, nivel,
-      firstName: extractFirstName(nombre)
+      firstName: extractFirstName(nombre),
+      deadlineText: extras.deadline_text || this.defaults.deadlineText,
+      paymentUrl: extras.payment_url || this.defaults.paymentUrl
     };
   },
 
   buildHtml: function(data) {
-    const deadline = data.deadlineText || this.defaults.deadlineText;
-    const url = data.paymentUrl || this.defaults.paymentUrl;
+    const deadline = data.deadlineText;
+    const url = data.paymentUrl;
 
-    let content = `<p>Hola <strong>${data.firstName}</strong>,</p>`;
+    let content = `<p>Hola <strong>${data.firstName}</strong>:</p>`;
     content += `<p>Te contactamos de manera <strong>urgente</strong> para recordarte que el plazo para la reserva de tu cupo en los cursos de idiomas vence impostergablemente este <strong>${deadline}</strong>.</p>`;
     
     content += buildButton("Pagar con Webpay", url);
@@ -241,6 +253,7 @@ const placementTestTemplate = {
   id: 'placement_test',
   name: 'Placement Test',
   requiredHeaders: ['nombre', 'correo', 'user id', 'password'],
+  configKeys: ['platform_url', 'deadline_text'],
   senderName: 'Programa Idiomas PUCV',
   statusColumn: 'Reminder Status',
   headerTitle: 'PLACEMENT TEST - PROGRAMA IDIOMAS',
@@ -251,24 +264,28 @@ const placementTestTemplate = {
     deadlineText: ""
   },
 
-  processRow: function(row, headers, rowIndex) {
+  processRow: function(row, headers, rowIndex, extraData) {
     const nombre = requiredCell(row, headers['nombre'], 'Nombre', rowIndex);
     const correo = requiredCell(row, headers['correo'], 'Correo', rowIndex);
     const userId = requiredCell(row, headers['user id'], 'User ID', rowIndex);
     const password = requiredCell(row, headers['password'], 'Password', rowIndex);
     const institutionId = safeCell(row, headers['institutional id']);
 
+    const extras = extraData ? extraData.configExtras : {};
+
     return {
       nombre, correo, userId, password, institutionId,
-      firstName: extractFirstName(nombre)
+      firstName: extractFirstName(nombre),
+      platformUrl: extras.platform_url || this.defaults.platformUrl,
+      deadlineText: extras.deadline_text || this.defaults.deadlineText
     };
   },
 
   buildHtml: function(data) {
-    let content = `<p>Estimado(a) <strong>${data.firstName}</strong>,</p>`;
+    let content = `<p>Estimado(a) <strong>${data.firstName}</strong>:</p>`;
     content += `<p>Esperamos que te encuentres muy bien. Te escribimos para enviarte las credenciales de acceso para rendir tu <strong>Placement Test</strong> del Programa de Idiomas PUCV.</p>`;
     
-    let credentials = `<strong>Plataforma:</strong> <a href="${this.defaults.platformUrl}">${this.defaults.platformUrl}</a><br>`;
+    let credentials = `<strong>Plataforma:</strong> <a href="${data.platformUrl}">${data.platformUrl}</a><br>`;
     credentials += `<strong>User ID:</strong> ${data.userId}<br>`;
     credentials += `<strong>Password:</strong> ${data.password}`;
     if (data.institutionId) {
@@ -284,10 +301,10 @@ const placementTestTemplate = {
                   <li>Sigue las instrucciones en pantalla para completar la evaluación.</li>
                 </ol>`;
 
-    content += buildButton("Acceder a la Plataforma", this.defaults.platformUrl);
+    content += buildButton("Acceder a la Plataforma", data.platformUrl);
 
-    if (this.defaults.deadlineText) {
-      content += buildWarningBox(`Recuerda que tienes hasta el día <strong>${this.defaults.deadlineText}</strong> para completar esta evaluación.`);
+    if (data.deadlineText) {
+      content += buildWarningBox(`Recuerda que tienes hasta el día <strong>${data.deadlineText}</strong> para completar esta evaluación.`);
     }
 
     content += `<p>Si tienes problemas técnicos durante el test, por favor contáctanos a la brevedad.</p>`;
@@ -305,16 +322,19 @@ const codeDeliveryTemplate = {
   id: 'code_delivery',
   name: 'Envío de Códigos',
   requiredHeaders: ['nombre', 'correo', 'codigo'],
+  configKeys: ['code_type'],
   senderName: 'Centro de Idiomas PUCV',
   statusColumn: 'enviado',
   headerTitle: 'ENTREGA DE CÓDIGO',
   footerLines: ['Centro de Idiomas PUCV', 'PUCV'],
 
-  processRow: function(row, headers, rowIndex) {
+  processRow: function(row, headers, rowIndex, extraData) {
     const nombre = requiredCell(row, headers['nombre'], 'Nombre', rowIndex);
     const correo = requiredCell(row, headers['correo'], 'Correo', rowIndex);
     const codigo = requiredCell(row, headers['codigo'], 'Código', rowIndex);
-    const tipo = safeCell(row, headers['tipo_opcional']) || "de acceso";
+    
+    const extras = extraData ? extraData.configExtras : {};
+    const tipo = safeCell(row, headers['tipo_opcional']) || extras.code_type || "de acceso";
 
     return {
       nombre, correo, codigo, tipo,
@@ -323,7 +343,7 @@ const codeDeliveryTemplate = {
   },
 
   buildHtml: function(data) {
-    let content = `<p>Hola <strong>${data.firstName}</strong>,</p>`;
+    let content = `<p>Hola <strong>${data.firstName}</strong>:</p>`;
     content += `<p>A continuación te hacemos entrega de tu código <strong>${data.tipo}</strong> solicitado:</p>`;
     
     content += `
@@ -349,6 +369,7 @@ const reportDeliveryTemplate = {
   id: 'report_delivery',
   name: 'Entrega de Informes',
   requiredHeaders: [], // Special case: uses fixed column indexes from Informe script
+  configKeys: ['directory_sheet_name'],
   senderName: 'Unidad de Evaluación Docente CELE',
   senderAlias: 'cele.dgai@pucv.cl',
   statusColumn: 'Estado',
@@ -409,7 +430,7 @@ const reportDeliveryTemplate = {
   },
 
   buildHtml: function(data) {
-    let content = `<p>Estimado(a) docente <strong>${data.professorName}</strong>,</p>`;
+    let content = `<p>Estimado(a) docente <strong>${data.professorName}</strong>:</p>`;
     content += `<p>Junto con saludarte cordialmente, la Unidad de Evaluación Docente hace entrega de los resultados de la encuesta de percepción estudiantil para el siguiente curso:</p>`;
     
     content += buildInfoBox(`<strong>Curso:</strong> ${data.course}`);
@@ -432,6 +453,7 @@ const surveyTemplate = {
   id: 'survey',
   name: 'Encuesta de Percepción',
   requiredHeaders: ['nombre', 'correo'],
+  configKeys: ['survey_url', 'program_name', 'extra_note'],
   senderName: 'PUCV',
   statusColumn: 'Estado Encuesta',
   headerTitle: 'ENCUESTA DE PERCEPCIÓN',
@@ -442,32 +464,44 @@ const surveyTemplate = {
     programName: "tu curso actual"
   },
 
-  processRow: function(row, headers, rowIndex) {
+  processRow: function(row, headers, rowIndex, extraData) {
     const nombre = requiredCell(row, headers['nombre'], 'Nombre', rowIndex);
     const correo = requiredCell(row, headers['correo'], 'Correo', rowIndex);
 
+    const extras = extraData ? extraData.configExtras : {};
+
     return {
       nombre, correo,
-      firstName: extractFirstName(nombre)
+      firstName: extractFirstName(nombre),
+      surveyUrl: extras.survey_url || this.defaults.surveyUrl,
+      programName: extras.program_name || this.defaults.programName,
+      extraNote: extras.extra_note || null
     };
   },
 
   buildHtml: function(data) {
-    const url = data.surveyUrl || this.defaults.surveyUrl;
-    const program = data.programName || this.defaults.programName;
+    const url = data.surveyUrl;
+    const program = data.programName;
 
-    let content = `<p>Estimado(a) <strong>${data.firstName}</strong>,</p>`;
-    content += `<p>Para nosotros es fundamental conocer tu opinión sobre el desarrollo y calidad de <strong>${program}</strong> que estás cursando.</p>`;
+    let content = `<p>Estimado(a) <strong>${data.firstName}</strong>:</p>`;
+    content += `<p>Para nosotros es fundamental conocer tu opinión sobre el desarrollo y calidad de <strong>${program}</strong>.</p>`;
     content += `<p>Te invitamos a completar la siguiente encuesta de percepción, la cual no te tomará más de 5 minutos:</p>`;
     
     content += buildButton("Completar Encuesta", url);
 
     content += buildWarningBox(`<strong>Nota importante:</strong> Te recordamos que la completación de esta encuesta es un requisito para la gestión y posterior envío de tus certificados de aprobación.`);
 
+    if (data.extraNote) {
+      content += buildInfoBox(data.extraNote);
+    }
+    
     content += `<p>Agradecemos de antemano tu tiempo y colaboración.</p>`;
     content += `<p>Atentamente,<br>Dirección General de Asuntos Internacionales PUCV</p>`;
 
-    return content;
+    return {
+      content: content,
+      extraNote: data.extraNote // Passed to buildEmailLayout via Main.gs
+    };
   }
 };
 

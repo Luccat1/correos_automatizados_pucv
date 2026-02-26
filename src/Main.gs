@@ -101,7 +101,8 @@ function menuSendTest() {
   const row = dataRange.getValues()[0];
 
   try {
-    const rowData = template.processRow(row, headers, 2);
+    const extraData = { configExtras: config.extras };
+    const rowData = template.processRow(row, headers, 2, extraData);
     if (!rowData) {
       showAlert('Error', 'No se pudo procesar la primera fila de datos.');
       return;
@@ -151,7 +152,8 @@ function menuPreview() {
   const row = dataRange.getValues()[0];
 
   try {
-    const rowData = template.processRow(row, headers, 2);
+    const extraData = { configExtras: config.extras };
+    const rowData = template.processRow(row, headers, 2, extraData);
     if (!rowData) {
       showAlert('Error', 'No se pudo procesar la primera fila de datos.');
       return;
@@ -221,7 +223,7 @@ function _executeBatch(asDraft) {
   }
 
   // Pre-load extra data for templates that need it (e.g. report_delivery)
-  const extraData = {};
+  const extraData = { configExtras: config.extras };
   if (template.id === 'report_delivery') {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const dirSheet = ss.getSheets().find(s => s.getName().toLowerCase() === 'directorio');
@@ -251,13 +253,14 @@ function _executeBatch(asDraft) {
       const innerHtml = template.buildHtml(data);
       const isObject = typeof innerHtml === 'object';
       const body = isObject ? innerHtml.content : innerHtml;
-      const alertBand = isObject ? innerHtml.alertBand : null;
+      const extraNote = isObject ? innerHtml.extraNote : null;
 
       const fullHtml = buildEmailLayout({
         content: body,
         headerTitle: template.headerTitle,
         footerLines: template.footerLines,
-        alertBand: alertBand
+        alertBand: alertBand,
+        extraNote: extraNote
       });
 
       // Special overrides from processRow (e.g. report_delivery)
