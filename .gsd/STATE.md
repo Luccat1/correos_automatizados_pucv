@@ -1,19 +1,21 @@
 # GSD State
 
+## Gap Closure Mode
+
+Addressing 4 gaps from milestone audit.
+
 ## Current Position
 
-- **Phase**: 4 (completed)
-- **Task**: All tasks complete
-- **Status**: Milestone Complete 🎉
+- **Phase**: 5 — Gap Closure & GitHub Prep
+- **Task**: Planning complete
+- **Status**: Ready for execution
 
 ## Last Session Summary
 
-Phase 4 (Documentation) executed successfully (2026-02-26).
-- All 4 phases of the unified email system project are complete and verified.
-- Core engine, template registry, and main entry point are fully operational and documented.
-- Project is ready for handover.
+Milestone audit complete (2026-02-26). Phase 5 created with 2 gap closure plans:
+- Plan 5.1: Delete legacy files, remove GSD artifacts, create .gitignore
+- Plan 5.2: Fix ROADMAP checkboxes, finalize state
 
 ## Next Steps
 
-1. Celebrate!
-2. Archive the project using /complete-milestone (optional).
+1. /execute 5 --gaps-only

@@ -61,3 +61,12 @@
 - Deployment instructions (copy files → bound script → configure)
 - Updated `AGENTS.md`
 - Updated `appsscript.json` manifest
+
+### Phase 5: Gap Closure & GitHub Prep
+**Status**: ⬜ Not Started
+**Objective**: Clean repository, remove legacy files, add .gitignore, and prepare for GitHub.
+**Gaps to Close:**
+- [ ] Delete ~9 legacy script files superseded by unified system
+- [ ] Remove GSD framework artifacts not part of the project (adapters/, scripts/, GSD docs)
+- [ ] Add `.gitignore` for clean version control
+- [ ] Fix ROADMAP must-have checkboxes (cosmetic)
