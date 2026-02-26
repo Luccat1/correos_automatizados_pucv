@@ -16,7 +16,7 @@
 ## Phases
 
 ### Phase 1: Core Engine
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: Build `Core.gs` — the shared foundation that all templates depend on.
 **Delivers**:
 - Sheet access helpers (open sheet, map headers, ensure status column, safe cell read)
