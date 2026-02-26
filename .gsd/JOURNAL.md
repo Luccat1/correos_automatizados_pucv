@@ -1,0 +1,3 @@
+# Journal
+
+> Development log entries.
