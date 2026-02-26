@@ -233,7 +233,117 @@ const paymentReminderTemplate = {
   }
 };
 
+/**
+ * Placement Test Template
+ * Delivery of portal credentials and instructions.
+ */
+const placementTestTemplate = {
+  id: 'placement_test',
+  name: 'Placement Test',
+  requiredHeaders: ['nombre', 'correo', 'user id', 'password'],
+  senderName: 'Programa Idiomas PUCV',
+  statusColumn: 'Reminder Status',
+  headerTitle: 'PLACEMENT TEST - PROGRAMA IDIOMAS',
+  footerLines: ['Programa Idiomas PUCV', 'Dirección General de Asuntos Internacionales', 'PUCV'],
+  
+  defaults: {
+    platformUrl: "https://www.metritests.com/metrica/",
+    deadlineText: ""
+  },
+
+  processRow: function(row, headers, rowIndex) {
+    const nombre = requiredCell(row, headers['nombre'], 'Nombre', rowIndex);
+    const correo = requiredCell(row, headers['correo'], 'Correo', rowIndex);
+    const userId = requiredCell(row, headers['user id'], 'User ID', rowIndex);
+    const password = requiredCell(row, headers['password'], 'Password', rowIndex);
+    const institutionId = safeCell(row, headers['institutional id']);
+
+    return {
+      nombre, correo, userId, password, institutionId,
+      firstName: extractFirstName(nombre)
+    };
+  },
+
+  buildHtml: function(data) {
+    let content = `<p>Estimado(a) <strong>${data.firstName}</strong>,</p>`;
+    content += `<p>Esperamos que te encuentres muy bien. Te escribimos para enviarte las credenciales de acceso para rendir tu <strong>Placement Test</strong> del Programa de Idiomas PUCV.</p>`;
+    
+    let credentials = `<strong>Plataforma:</strong> <a href="${this.defaults.platformUrl}">${this.defaults.platformUrl}</a><br>`;
+    credentials += `<strong>User ID:</strong> ${data.userId}<br>`;
+    credentials += `<strong>Password:</strong> ${data.password}`;
+    if (data.institutionId) {
+      credentials += `<br><strong>Institution ID:</strong> ${data.institutionId}`;
+    }
+    
+    content += buildInfoBox(credentials);
+
+    content += `<p><strong>Pasos para rendir el test:</strong></p>`;
+    content += `<ol>
+                  <li>Ingresa al enlace de la plataforma indicado arriba.</li>
+                  <li>Inicia sesión con tu User ID y Password.</li>
+                  <li>Sigue las instrucciones en pantalla para completar la evaluación.</li>
+                </ol>`;
+
+    content += buildButton("Acceder a la Plataforma", this.defaults.platformUrl);
+
+    if (this.defaults.deadlineText) {
+      content += buildWarningBox(`Recuerda que tienes hasta el día <strong>${this.defaults.deadlineText}</strong> para completar esta evaluación.`);
+    }
+
+    content += `<p>Si tienes problemas técnicos durante el test, por favor contáctanos a la brevedad.</p>`;
+    content += `<p>Atentamente,<br>Programa Idiomas PUCV</p>`;
+
+    return content;
+  }
+};
+
+/**
+ * Code Delivery Template
+ * Prominent display of unique codes (books, tests, etc.).
+ */
+const codeDeliveryTemplate = {
+  id: 'code_delivery',
+  name: 'Envío de Códigos',
+  requiredHeaders: ['nombre', 'correo', 'codigo'],
+  senderName: 'Centro de Idiomas PUCV',
+  statusColumn: 'enviado',
+  headerTitle: 'ENTREGA DE CÓDIGO',
+  footerLines: ['Centro de Idiomas PUCV', 'PUCV'],
+
+  processRow: function(row, headers, rowIndex) {
+    const nombre = requiredCell(row, headers['nombre'], 'Nombre', rowIndex);
+    const correo = requiredCell(row, headers['correo'], 'Correo', rowIndex);
+    const codigo = requiredCell(row, headers['codigo'], 'Código', rowIndex);
+    const tipo = safeCell(row, headers['tipo_opcional']) || "de acceso";
+
+    return {
+      nombre, correo, codigo, tipo,
+      firstName: extractFirstName(nombre)
+    };
+  },
+
+  buildHtml: function(data) {
+    let content = `<p>Hola <strong>${data.firstName}</strong>,</p>`;
+    content += `<p>A continuación te hacemos entrega de tu código <strong>${data.tipo}</strong> solicitado:</p>`;
+    
+    content += `
+      <div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #f4f4f4; border: 2px dashed ${COLORS.primary}; border-radius: 8px;">
+        <span style="font-size: 24px; font-weight: bold; font-family: monospace; color: ${COLORS.primary}; letter-spacing: 2px;">${data.codigo}</span>
+      </div>
+    `;
+
+    content += buildInfoBox("Este código es para uso personal. Te recomendamos copiarlo y pegarlo directamente en la plataforma correspondiente para evitar errores de transcripción.");
+    
+    content += `<p>Si el código presenta algún error al ser activado, por favor responde a este correo adjuntando una foto del problema.</p>`;
+    content += `<p>Saludos,<br>Centro de Idiomas PUCV</p>`;
+
+    return content;
+  }
+};
+
 // Register the templates
 registerTemplate(certificateTemplate);
 registerTemplate(confirmationTemplate);
 registerTemplate(paymentReminderTemplate);
+registerTemplate(placementTestTemplate);
+registerTemplate(codeDeliveryTemplate);
