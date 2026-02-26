@@ -9,6 +9,8 @@
  */
 function onOpen() {
   const menuItems = [
+    { label: '⚙️ Configurar Plantilla', functionName: 'menuSetupTemplate' },
+    null, // separator
     { label: '📧 Enviar Correos', functionName: 'menuSendEmails' },
     { label: '🧪 Enviar Prueba', functionName: 'menuSendTest' },
     { label: '👁 Vista Previa', functionName: 'menuPreview' },
@@ -46,6 +48,7 @@ function _getConfig() {
 
     switch (key) {
       case 'template_id': config.templateId = String(value).trim(); break;
+      case 'data_sheet': config.dataSheet = String(value).trim(); break;
       case 'sender_name': config.senderName = value; break;
       case 'sender_alias': config.senderAlias = value; break;
       case 'cc': config.cc = value; break;
@@ -92,8 +95,9 @@ function menuSendTest() {
   if (!resolved) return;
 
   const { template, config } = resolved;
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getActiveSheet();
+  const sheet = _getDataSheet(config.dataSheet);
+  if (!sheet) return;
+
   const headers = mapHeaders(sheet);
   
   // Get first data row (row 2)
@@ -144,8 +148,9 @@ function menuPreview() {
   if (!resolved) return;
 
   const { template, config } = resolved;
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getActiveSheet();
+  const sheet = _getDataSheet(config.dataSheet);
+  if (!sheet) return;
+
   const headers = mapHeaders(sheet);
   
   const dataRange = sheet.getRange(2, 1, 1, sheet.getLastColumn());
@@ -186,27 +191,30 @@ function menuPreview() {
  * Triggers mass sending of emails.
  */
 function menuSendEmails() {
-  _executeBatch(false);
+  _showSendDialog(false);
 }
 
 /**
  * Triggers mass creation of drafts.
  */
 function menuCreateDrafts() {
-  _executeBatch(true);
+  _showSendDialog(true);
 }
 
 /**
  * Shared execution logic for sending and drafting.
  * @param {boolean} asDraft
+ * @param {Object} [overrides] - Optional overrides from the GUI.
  * @private
  */
-function _executeBatch(asDraft) {
+function _executeBatch(asDraft, overrides) {
   const resolved = _getSelectedTemplate();
   if (!resolved) return;
 
   const { template, config } = resolved;
-  const sheet = SpreadsheetApp.getActiveSheet();
+  const sheet = _getDataSheet(config.dataSheet);
+  if (!sheet) return;
+
   const headers = mapHeaders(sheet);
 
   // Validate required headers
@@ -216,14 +224,22 @@ function _executeBatch(asDraft) {
     return;
   }
 
-  // Confirmation
-  const actionName = asDraft ? 'crear borradores' : 'enviar correos masivos';
-  if (!confirmAction('Confirmar Acción', `¿Está seguro que desea ${actionName} usando la plantilla "${template.name}"?`)) {
-    return;
+  // Confirmation (skip if coming from Dialog as it's already confirmed there)
+  if (!overrides) {
+    const actionName = asDraft ? 'crear borradores' : 'enviar correos masivos';
+    if (!confirmAction('Confirmar Acción', `¿Está seguro que desea ${actionName} usando la plantilla "${template.name}"?`)) {
+      return;
+    }
   }
 
-  // Pre-load extra data for templates that need it (e.g. report_delivery)
-  const extraData = { configExtras: config.extras };
+  // Pre-load extra data for templates that need it
+  const extraData = { configExtras: { ...config.extras } };
+  
+  // Apply overrides if provided
+  if (overrides) {
+    if (overrides.extraNote !== undefined) extraData.configExtras.extra_note = overrides.extraNote;
+  }
+
   if (template.id === 'report_delivery') {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const dirSheet = ss.getSheets().find(s => s.getName().toLowerCase() === 'directorio');
@@ -257,20 +273,22 @@ function _executeBatch(asDraft) {
 
       const fullHtml = buildEmailLayout({
         content: body,
-        headerTitle: template.headerTitle,
+        headerTitle: (overrides && overrides.subject) || template.headerTitle,
         footerLines: template.footerLines,
-        alertBand: alertBand,
+        alertBand: isObject ? innerHtml.alertBand : null,
         extraNote: extraNote
       });
 
-      // Special overrides from processRow (e.g. report_delivery)
+      // Recipient selection
       const recipient = data.to || data.correo;
-      const cc = data.cc || config.cc;
-      const bcc = data.bcc || config.bcc;
+      
+      // CC/BCC calculation: Overrides > Template Data > Config
+      const cc = (overrides && overrides.cc) || data.cc || config.cc;
+      const bcc = (overrides && overrides.bcc) || data.bcc || config.bcc;
 
       return {
         to: recipient,
-        subject: template.headerTitle,
+        subject: (overrides && overrides.subject) || template.headerTitle,
         htmlBody: fullHtml,
         cc: cc,
         bcc: bcc
@@ -292,7 +310,6 @@ function _executeBatch(asDraft) {
   const results = sendBatch(rows, processFn, options);
 
   // Update statuses
-  // statuses are already [[val], [val], ...] from sendBatch
   batchUpdateColumn(sheet, 2, statusCol, results.statuses);
 
   showResult(results.processed, results.errors);
@@ -322,4 +339,173 @@ function menuShowConfig() {
   msg += `\nCabeceras Requeridas:\n- ${template.requiredHeaders.join('\n- ')}`;
 
   showAlert('Configuración Actual', msg);
+}
+
+/**
+ * Displays a template selector and generates sheets.
+ */
+function menuSetupTemplate() {
+  const templates = listTemplates();
+  const items = templates.map(t => `${t.id} (${t.name})`);
+  
+  const ui = SpreadsheetApp.getUi();
+  const response = ui.prompt(
+    'Configurar Nueva Plantilla',
+    'Seleccione el ID de la plantilla:\n\n' + items.join('\n'),
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (response.getSelectedButton() !== ui.Button.OK) return;
+  
+  const input = response.getResponseText().trim().split(' ')[0];
+  const template = getTemplate(input);
+
+  if (!template) {
+    showAlert('Error', `El ID "${input}" no es válido.`);
+    return;
+  }
+
+  _generateSheets(template.id);
+}
+
+/**
+ * Generates "Config" and "Datos" sheets for a template.
+ * @param {string} templateId
+ * @private
+ */
+function _generateSheets(templateId) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const template = getTemplate(templateId);
+  
+  // 1. Config Sheet
+  let configSheet = ss.getSheetByName('Config');
+  if (!configSheet) {
+    configSheet = ss.insertSheet('Config');
+  } else {
+    if (!confirmAction('Hoja Existente', 'La hoja "Config" ya existe. ¿Desea sobreescribirla?')) {
+      return;
+    }
+    configSheet.clear();
+  }
+
+  const configRows = [
+    ['Variable', 'Valor', 'Descripción'],
+    ['template_id', template.id, 'ID de la plantilla a usar'],
+    ['data_sheet', 'Datos', 'Nombre de la hoja que contiene los datos'],
+    ['sender_name', template.senderName || '', 'Nombre que aparecerá como remitente'],
+    ['sender_alias', template.senderAlias || '', 'Email alias (debe estar configurado en Gmail)'],
+    ['cc', '', 'Correos en CC (separados por coma)'],
+    ['bcc', '', 'Correos en BCC (separados por coma)']
+  ];
+
+  if (template.configKeys) {
+    template.configKeys.forEach(key => {
+      configRows.push([key, '', `Configuración específica: ${key}`]);
+    });
+  }
+
+  configSheet.getRange(1, 1, configRows.length, 3).setValues(configRows);
+  configSheet.getRange(1, 1, 1, 3).setFontWeight('bold').setBackground('#f3f3f3');
+  configSheet.setFrozenRows(1);
+  configSheet.autoResizeColumns(1, 3);
+
+  // 2. Data Sheet
+  let dataSheet = ss.getSheetByName('Datos');
+  if (!dataSheet) {
+    dataSheet = ss.insertSheet('Datos');
+  } else {
+    const confirm = confirmAction('Hoja Existente', 'La hoja "Datos" ya existe. ¿Desea añadir las cabeceras requeridas?');
+    if (!confirm) return;
+  }
+
+  const headers = [...template.requiredHeaders];
+  if (template.statusColumn) {
+     if (!headers.includes(template.statusColumn)) headers.push(template.statusColumn);
+  } else if (!headers.includes('Estado_Envio')) {
+    headers.push('Estado_Envio');
+  }
+  
+  // Merge with existing headers if any
+  const existingHeaders = dataSheet.getLastColumn() > 0 ? dataSheet.getRange(1, 1, 1, dataSheet.getLastColumn()).getValues()[0] : [];
+  const finalHeaders = [...existingHeaders];
+  headers.forEach(h => {
+    if (!finalHeaders.includes(h)) finalHeaders.push(h);
+  });
+
+  dataSheet.getRange(1, 1, 1, finalHeaders.length).setValues([finalHeaders]);
+  dataSheet.getRange(1, 1, 1, finalHeaders.length).setFontWeight('bold').setBackground('#d9ead3');
+  dataSheet.setFrozenRows(1);
+  dataSheet.autoResizeColumns(1, finalHeaders.length);
+
+  showAlert('Configuración Completada', `Se han preparado las hojas para la plantilla "${template.name}".\n\n1. Complete los valores en "Config".\n2. Llene los datos en "Datos".`);
+}
+
+/**
+ * Returns the sheet intended for data, or null with alert if missing.
+ * @param {string} name
+ * @returns {GoogleAppsScript.Spreadsheet.Sheet|null}
+ * @private
+ */
+function _getDataSheet(name) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetName = name || 'Datos';
+  const sheet = ss.getSheetByName(sheetName);
+
+  if (!sheet) {
+    showAlert('Hoja no encontrada', `No se encontró la hoja de datos "${sheetName}". Verifique la configuración.`);
+    return null;
+  }
+
+  return sheet;
+}
+
+/**
+ * Shows the pre-send customization dialog.
+ * @param {boolean} asDraft
+ * @private
+ */
+function _showSendDialog(asDraft) {
+  const resolved = _getSelectedTemplate();
+  if (!resolved) return;
+
+  const { template, config } = resolved;
+  const sheet = _getDataSheet(config.dataSheet);
+  if (!sheet) return;
+
+  const headers = mapHeaders(sheet);
+  const missing = template.requiredHeaders.filter(h => headers[h] === undefined);
+  if (missing.length > 0) {
+    showAlert('Cabeceras Faltantes', `Faltan las siguientes columnas requeridas: ${missing.join(', ')}`);
+    return;
+  }
+
+  const rowCount = sheet.getLastRow() - 1;
+  if (rowCount <= 0) {
+    showAlert('Sin Datos', 'La hoja de datos está vacía.');
+    return;
+  }
+
+  const html = HtmlService.createTemplateFromFile('SendDialog');
+  html.templateName = template.name;
+  html.subject = template.headerTitle;
+  html.extraNote = config.extras.extra_note || '';
+  html.cc = config.cc || '';
+  html.bcc = config.bcc || '';
+  html.rowCount = rowCount;
+  html.asDraft = asDraft;
+
+  const ui = html.evaluate()
+      .setWidth(500)
+      .setHeight(450)
+      .setTitle(asDraft ? 'Preparar Borradores' : 'Confirmar Envío Masivo');
+
+  SpreadsheetApp.getUi().showModalDialog(ui, ' '); // Title is handled inside dialog
+}
+
+/**
+ * Server-side callback from SendDialog.html.
+ * @param {Object} formData
+ */
+function executeBatchFromDialog(formData) {
+  _executeBatch(formData.asDraft, formData);
 }

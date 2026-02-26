@@ -1,0 +1,203 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      :root {
+        --primary: #24588d;
+        --secondary: #1d71b8;
+        --accent: #008cba;
+        --white: #ffffff;
+        --text: #333333;
+        --border: #e0e0e0;
+        --bg: #f8f8f8;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+        color: var(--text);
+        background-color: var(--bg);
+      }
+      .container {
+        padding: 20px;
+      }
+      .header {
+        background-color: var(--primary);
+        color: var(--white);
+        padding: 15px 20px;
+        margin-bottom: 20px;
+      }
+      .header h2 {
+        margin: 0;
+        font-size: 18px;
+      }
+      .summary {
+        font-size: 13px;
+        margin-bottom: 20px;
+        color: #666;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 10px;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        font-size: 14px;
+      }
+      .form-group input[type="text"],
+      .form-group textarea {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        box-sizing: border-box;
+        font-size: 14px;
+      }
+      .form-group textarea {
+        height: 80px;
+        resize: vertical;
+      }
+      .footer {
+        margin-top: 25px;
+        text-align: right;
+      }
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+        margin-left: 10px;
+      }
+      .btn-primary {
+        background-color: var(--primary);
+        color: var(--white);
+      }
+      .btn-primary:hover {
+        background-color: var(--secondary);
+      }
+      .btn-secondary {
+        background-color: #ccc;
+        color: var(--text);
+      }
+      .btn-secondary:hover {
+        background-color: #bbb;
+      }
+      .loader {
+        display: none;
+        margin-top: 10px;
+        font-style: italic;
+        color: var(--primary);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h2><?= asDraft ? '📝 Preparar Borradores' : '📤 Enviar Correos' ?></h2>
+    </div>
+
+    <div class="container">
+      <div class="summary">
+        <strong>Plantilla:</strong> <?= templateName ?><br />
+        <strong>Destinatarios orientativos:</strong> <?= rowCount ?> filas
+        detectadas.
+      </div>
+
+      <form id="sendForm">
+        <div class="form-group">
+          <label for="subject">Asunto:</label>
+          <input
+            type="text"
+            id="subject"
+            name="subject"
+            value="<?= subject ?>"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="extraNote">Nota Adicional:</label>
+          <textarea
+            id="extraNote"
+            name="extraNote"
+            placeholder="Opcional: mensaje que aparecerá en el recuadro amarillo..."
+          >
+<?= extraNote ?></textarea
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="cc">CC (Copia):</label>
+          <input
+            type="text"
+            id="cc"
+            name="cc"
+            value="<?= cc ?>"
+            placeholder="ejemplo@pucv.cl, otro@pucv.cl"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="bcc">BCC (Copia Oculta):</label>
+          <input type="text" id="bcc" name="bcc" value="<?= bcc ?>" />
+        </div>
+
+        <input type="hidden" name="asDraft" value="<?= asDraft ?>" />
+
+        <div id="loader" class="loader">Procesando... por favor espere.</div>
+
+        <div class="footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            onclick="google.script.host.close()"
+          >
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary" id="submitBtn">
+            <?= asDraft ? 'Crear Borradores' : 'Iniciar Envío' ?>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <script>
+      document
+        .getElementById("sendForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+
+          const submitBtn = document.getElementById("submitBtn");
+          const loader = document.getElementById("loader");
+
+          submitBtn.disabled = true;
+          loader.style.display = "block";
+
+          const formData = {
+            subject: document.getElementById("subject").value,
+            extraNote: document.getElementById("extraNote").value,
+            cc: document.getElementById("cc").value,
+            bcc: document.getElementById("bcc").value,
+            asDraft:
+              document.querySelector('input[name="asDraft"]').value === "true",
+          };
+
+          google.script.run
+            .withSuccessHandler(function () {
+              google.script.host.close();
+            })
+            .withFailureHandler(function (err) {
+              alert("Error: " + err);
+              submitBtn.disabled = false;
+              loader.style.display = "none";
+            })
+            .executeBatchFromDialog(formData);
+        });
+    </script>
+  </body>
+</html>
