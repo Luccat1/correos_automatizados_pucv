@@ -43,7 +43,7 @@
 - New template: `survey`
 
 ### Phase 3: Main Entry Point & Menus
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: Build `Main.gs` — the entry point that wires templates to menus and user actions.
 **Delivers**:
 - `onOpen()` with custom menu (Enviar, Prueba, Vista Previa)
