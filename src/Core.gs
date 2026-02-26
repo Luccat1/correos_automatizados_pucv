@@ -103,3 +103,72 @@ function batchUpdateColumn(sheet, startRow, colIndex1Based, values2DArray) {
   if (values2DArray.length === 0) return;
   sheet.getRange(startRow, colIndex1Based, values2DArray.length, 1).setValues(values2DArray);
 }
+
+/**
+ * Returns formatted timestamp string using America/Santiago timezone.
+ * @returns {string}
+ */
+function now() {
+  return Utilities.formatDate(new Date(), "America/Santiago", "yyyy-MM-dd HH:mm:ss");
+}
+
+/**
+ * Validates email format with regex.
+ * @param {string} email
+ * @returns {boolean}
+ */
+function isValidEmail(email) {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(String(email).toLowerCase().trim());
+}
+
+/**
+ * Parses a comma/semicolon-separated string of emails into a clean array.
+ * @param {string} input
+ * @returns {Array.<string>} Clean array of email addresses.
+ */
+function parseEmailList(input) {
+  if (!input) return [];
+  const normalized = String(input).replace(/;/g, ",");
+  return normalized.split(",")
+    .map(e => e.trim())
+    .filter(e => e.length > 0 && e.includes("@"));
+}
+
+/**
+ * Extracts first name from a full name string.
+ * @param {string} fullName
+ * @returns {string}
+ */
+function extractFirstName(fullName) {
+  if (!fullName) return "";
+  const parts = fullName.toString().trim().split(/\s+/);
+  return parts[0];
+}
+
+/**
+ * Extracts Google Drive file ID from various URL formats (/d/ID, id=ID).
+ * @param {string} url
+ * @returns {string|null}
+ */
+function extractFileId(url) {
+  if (!url) return null;
+  const match = url.match(/[-\w]{25,}/);
+  return match ? match[0] : null;
+}
+
+/**
+ * Returns remaining daily email quota.
+ * @returns {number}
+ */
+function checkQuota() {
+  return MailApp.getRemainingDailyQuota();
+}
+
+/**
+ * Wrapper for Utilities.sleep().
+ * @param {number} ms - Milliseconds to sleep.
+ */
+function sleep(ms) {
+  Utilities.sleep(ms);
+}
