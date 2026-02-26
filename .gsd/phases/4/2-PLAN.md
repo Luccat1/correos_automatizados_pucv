@@ -4,89 +4,58 @@ plan: 2
 wave: 1
 ---
 
-# Plan 4.2: Template Creation Guide & AGENTS.md
+# Plan 4.2: Data Sheet Auto-Detection
 
 ## Objective
-Write the developer-facing guide on how to add new templates, and update AGENTS.md for future AI assistants working on this codebase.
+
+Make the system find the correct data sheet by reading `data_sheet` from Config instead of requiring the user to be on the correct active sheet. Update `_getDataSheet` to be smarter about detecting the data sheet name, and improve error messages.
 
 ## Context
-- .gsd/SPEC.md
-- .gsd/DECISIONS.md
-- src/Templates.gs (template pattern reference)
-- AGENTS.md (existing file to update)
+
+- `src/Main.gs` — `_getDataSheet()`, `_getConfig()`, `_executeBatch()`, `_showSendDialog()`
+- The current flow: `_getConfig()` reads `data_sheet` from Config → `_getDataSheet(config.dataSheet)` looks up the sheet by name
 
 ## Tasks
 
 <task type="auto">
-  <name>Create template creation guide</name>
-  <files>docs/CREATING_TEMPLATES.md</files>
+  <name>Improve _getDataSheet auto-detection and error handling</name>
+  <files>src/Main.gs</files>
   <action>
-    Create `docs/CREATING_TEMPLATES.md` — A developer guide for adding new email templates:
-
-    1. **Overview** — The template registry pattern (what each field does)
-    2. **Template Object Structure** — Full reference of all fields:
-       - `id` (required) — Unique string identifier
-       - `name` (required) — Spanish display name
-       - `requiredHeaders` (required) — Array of column names
-       - `senderName` — Default sender display name
-       - `senderAlias` — Optional alias email
-       - `statusColumn` — Name of the status tracking column
-       - `headerTitle` — Title for email header bar
-       - `footerLines` — Array of footer text lines
-       - `defaults` — Object of configurable overrides
-       - `processRow(row, headers, rowIndex)` (required) — Row processing function
-       - `buildHtml(data)` (required) — HTML content builder function
-    3. **Step-by-Step: Adding a New Template**
-       a. Open `Templates.gs`
-       b. Define template object with all required fields
-       c. Implement `processRow` — use `requiredCell()` and `safeCell()` from Core
-       d. Implement `buildHtml` — use `buildButton()`, `buildInfoBox()`, `buildWarningBox()` from Core
-       e. Call `registerTemplate(yourTemplate)` at the bottom of the file
-       f. Test with "Vista Previa" and "Enviar Prueba" from the menu
-    4. **Example** — A simplified example template for reference (e.g., a generic notification)
-    5. **Available Core Helpers** — Quick reference of all Core.gs functions available to templates
-
-    Language: Spanish.
+    The current `_getDataSheet` already works by name lookup. The issue is:
+    1. If `config.dataSheet` is empty, it defaults to "Datos" — this is fine
+    2. But `_generateSheets()` always names the data sheet "Datos" — it ignores any custom name
+    
+    Updates needed:
+    1. In `_getDataSheet(name)`: improve the error message to list available sheets so the user knows what sheets exist
+    2. In `_generateSheets()`: use the template name as suffix for data sheet naming, e.g., "Datos_survey" instead of always "Datos". This prevents conflicts when multiple templates share the same spreadsheet.
+    3. Update `_generateSheets()` so that `data_sheet` value in Config is set to the actual generated data sheet name (e.g., "Datos_survey")
+    4. In `_showSendDialog()` and `_executeBatch()`: the flow already reads `config.dataSheet` — no changes needed as long as Config has the correct value
+    
+    AVOID: Breaking backward compat — if `data_sheet` is already set to "Datos" by an existing Config sheet, it should still work.
   </action>
-  <verify>
-    - `docs/CREATING_TEMPLATES.md` exists
-    - Contains template object structure reference
-    - Contains step-by-step guide
-    - Includes example template
-  </verify>
-  <done>Template creation guide with full reference and example template</done>
+  <verify>_getDataSheet provides helpful error listing available sheets; generated data sheets use template-specific names</verify>
+  <done>New setups create "Datos_{templateId}" sheets; existing "Datos" still works</done>
 </task>
 
 <task type="auto">
-  <name>Update AGENTS.md</name>
-  <files>AGENTS.md</files>
+  <name>Add sheet status indicator to SendDialog</name>
+  <files>src/SendDialog.html, src/Main.gs</files>
   <action>
-    Update `AGENTS.md` to reflect the new unified architecture:
-
-    1. **Project Overview** — Unified Email System PUCV (Apps Script)
-    2. **File Structure**:
-       - `src/Core.gs` — Shared engine (24 functions)
-       - `src/Templates.gs` — Template registry (7 templates)
-       - `src/Main.gs` — Entry point and menu handlers
-       - `docs/DEPLOYMENT.md` — Deployment guide
-       - `docs/CREATING_TEMPLATES.md` — Template dev guide
-    3. **Patterns**:
-       - Registry pattern for templates
-       - Config sheet for per-deployment settings
-       - Status column tracking for idempotent sends
-    4. **Code Conventions**:
-       - English for code (variables, functions, comments)
-       - Spanish for user-facing strings (menu labels, alerts, template content)
-       - JSDoc on all functions
-       - PUCV 100-year palette (primary: #24588d)
-    5. **How to Extend** — Point to CREATING_TEMPLATES.md
+    In `_showSendDialog()`, pass the data sheet name to the SendDialog so the user can see which sheet is being used:
+    1. Add `html.dataSheetName = sheet.getName();` in `_showSendDialog()`
+    2. In `SendDialog.html`, display a small info line like: "📊 Datos desde: Datos_survey (25 filas)"
+    
+    This gives the user confidence that the system found the right sheet.
+    
+    AVOID: Overcomplicating the dialog — just a small informational line.
   </action>
-  <verify>
-    - AGENTS.md exists and reflects current architecture
-  </verify>
-  <done>AGENTS.md updated with accurate project description and patterns</done>
+  <verify>SendDialog shows which data sheet is being used</verify>
+  <done>Users can see which data sheet will be used before sending</done>
 </task>
 
 ## Success Criteria
-- [ ] docs/CREATING_TEMPLATES.md with full template authoring guide
-- [ ] AGENTS.md accurately describes the new architecture
+
+- [ ] New template setups create "Datos_{templateId}" sheets
+- [ ] Existing "Datos" sheet names still work
+- [ ] Error messages list available sheets when data sheet is not found
+- [ ] SendDialog shows the data sheet name being used

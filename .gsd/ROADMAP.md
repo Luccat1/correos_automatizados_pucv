@@ -46,3 +46,11 @@ Revision of all template copies for institutional tone. Standardized greetings a
 - Fallback `extractFirstName()` → "Estimado/a estudiante" si no hay nombre
 - Eliminar redundancias (ej: "curso que estás cursando")
 - Tono alineado con el estilo de campañas IDIOMAS PUCV
+
+### Phase 4: Template Selector GUI & Data Sheet Auto-Detection
+**Status**: 🗓️ Planned
+**Objective**: Mejorar el selector de plantillas con un diálogo HTML visual y hacer que el sistema detecte automáticamente la hoja de datos sin depender de la hoja activa.
+**Delivers**:
+- Selector de plantillas como diálogo HTML con nombres, descripciones y preview
+- Auto-detección de hoja de datos por nombre configurado en Config (sin depender de hoja activa)
+- Feedback claro al usuario cuando la hoja de datos no se encuentra

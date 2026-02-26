@@ -4,106 +4,71 @@ plan: 1
 wave: 1
 ---
 
-# Plan 4.1: README, Deployment Guide & appsscript.json
+# Plan 4.1: HTML Template Selector Dialog
 
 ## Objective
-Rewrite `README.md` with the new unified architecture, create a deployment guide for end-users, and add the `appsscript.json` manifest file.
+
+Replace the current text-prompt-based template selector (`menuSetupTemplate`) with a rich HTML dialog that displays all available templates as clickable cards showing the template name, ID, required columns, and config keys. Selecting a template triggers the existing `_generateSheets()` logic.
 
 ## Context
-- .gsd/SPEC.md
-- .gsd/DECISIONS.md
-- src/Core.gs, src/Templates.gs, src/Main.gs
+
+- `src/Main.gs` — `menuSetupTemplate()`, `_generateSheets()`
+- `src/Templates.gs` — `listTemplates()`, template registry
+- `src/SendDialog.html` — reference for dialog styling patterns
 
 ## Tasks
 
 <task type="auto">
-  <name>Rewrite README.md</name>
-  <files>README.md</files>
+  <name>Create TemplateSelector.html dialog</name>
+  <files>src/TemplateSelector.html</files>
   <action>
-    Rewrite `README.md` entirely. Structure:
-
-    1. **Title & badge** — "Correos Automatizados PUCV" with a short tagline
-    2. **Overview** — What the system does (unified email automation on Google Sheets)
-    3. **Architecture** — 3-file structure diagram:
-       - `Core.gs` — Shared engine (sheet helpers, email sender, HTML layout, Drive sharing, menu builder)
-       - `Templates.gs` — Template registry + 7 registered templates
-       - `Main.gs` — Entry point, onOpen menu, batch/test/preview/draft handlers
-    4. **Available Templates** — Table listing each template ID, name, and purpose:
-       | ID | Name | Purpose |
-       |---|---|---|
-       | certificate | Envío de Certificados | Certificate delivery with Drive sharing |
-       | confirmation | Confirmación de Apertura | Course opening with payment instructions |
-       | payment_reminder | Recordatorio de Pago | Urgent payment deadline reminders |
-       | placement_test | Placement Test | Credential delivery for testing platforms |
-       | code_delivery | Envío de Códigos | Unique code distribution |
-       | report_delivery | Entrega de Informes | Evaluation reports with cross-sheet lookup |
-       | survey | Encuesta de Percepción | Student perception surveys |
-    5. **Quick Start** — Link to deployment guide
-    6. **Adding a New Template** — Link to template creation guide
-    7. **License / Credits** — PUCV, Centro de Idiomas
-
-    Language: Spanish (it's a user-facing document for PUCV staff).
-    DO NOT include code samples in README — keep it clean and high-level.
+    Create a new HTML file `src/TemplateSelector.html`:
+    - Title: "Seleccionar Plantilla"
+    - Lists all templates as styled cards in a vertical layout
+    - Each card shows: template name (bold), template ID (monospace subtitle), required columns (pill badges), and config keys (if any)
+    - Clicking a card highlights it; a "Configurar" button at the bottom triggers `google.script.run.setupTemplateFromDialog(templateId)`
+    - A "Cancelar" button calls `google.script.host.close()`
+    - Style consistent with SendDialog.html (same color palette, same font)
+    - Template data is passed via HtmlService template variables (array of {id, name, requiredHeaders, configKeys})
+    
+    AVOID: Complex JavaScript — keep it simple with onclick handlers.
   </action>
-  <verify>
-    Open `README.md` and verify:
-    - Architecture section describes 3 files
-    - Template table has 7 entries
-    - Links to guides exist
-  </verify>
-  <done>README.md rewritten with architecture overview and template table</done>
+  <verify>File exists at src/TemplateSelector.html</verify>
+  <done>A styled HTML dialog with template cards is created</done>
 </task>
 
 <task type="auto">
-  <name>Create deployment guide and appsscript.json</name>
-  <files>docs/DEPLOYMENT.md, appsscript.json</files>
+  <name>Wire menuSetupTemplate to use HTML dialog</name>
+  <files>src/Main.gs</files>
   <action>
-    1. **Create `docs/DEPLOYMENT.md`** — Step-by-step guide for deploying the system to a new Google Sheet:
-       
-       Steps:
-       a. Create a new Google Sheet (or use an existing one)
-       b. Open Apps Script editor (Extensions → Apps Script)
-       c. Create 3 files: `Core.gs`, `Templates.gs`, `Main.gs`
-       d. Copy contents from repo `src/` folder into each file
-       e. Create a "Config" sheet in the spreadsheet with key-value pairs:
-          - Row 1: `template_id` | `certificate` (or whichever template)
-          - Row 2: `sender_name` | `Programa Idiomas PUCV`
-          - Row 3: `cc` | `idiomas@pucv.cl` (optional)
-          - Additional optional rows for template-specific config
-       f. Create a data sheet with the required column headers for the chosen template
-       g. Reload the spreadsheet — custom menu appears
-       h. Test with "🧪 Enviar Prueba" first
-
-       Include a "Config Sheet Reference" table documenting all available config keys.
-       Include a "Troubleshooting" section with common issues.
-
-       Language: Spanish.
-
-    2. **Create `appsscript.json`**:
-       ```json
-       {
-         "timeZone": "America/Santiago",
-         "dependencies": {},
-         "exceptionLogging": "STACKDRIVER",
-         "runtimeVersion": "V8",
-         "oauthScopes": [
-           "https://www.googleapis.com/auth/spreadsheets.currentonly",
-           "https://www.googleapis.com/auth/gmail.compose",
-           "https://www.googleapis.com/auth/gmail.send",
-           "https://www.googleapis.com/auth/drive",
-           "https://www.googleapis.com/auth/script.external_request"
-         ]
-       }
-       ```
+    1. Update `menuSetupTemplate()` to:
+       - Call `listTemplates()` but also enrich with `requiredHeaders` and `configKeys` from each template
+       - Create an HtmlService template from `TemplateSelector.html`
+       - Pass the enriched template list as a template variable
+       - Show the dialog as a modal (500x500)
+    
+    2. Add `setupTemplateFromDialog(templateId)`:
+       - A server-side callback that receives the selected template ID
+       - Calls `_generateSheets(templateId)` 
+       - Returns success/error status to the dialog
+    
+    3. Add a `description` field to each template in `Templates.gs`:
+       - certificate: "Envío de certificados con enlace a Google Drive"
+       - confirmation: "Confirmación de apertura de curso con detalles de pago"
+       - payment_reminder: "Recordatorio urgente de plazo de pago"
+       - placement_test: "Credenciales para Placement Test en plataforma"
+       - code_delivery: "Entrega de códigos de acceso a materiales"
+       - report_delivery: "Informe de evaluación docente con enlace compartido"
+       - survey: "Encuesta de percepción estudiantil"
+    
+    AVOID: Breaking existing _generateSheets logic.
   </action>
-  <verify>
-    - `docs/DEPLOYMENT.md` exists with step-by-step instructions
-    - `appsscript.json` exists with V8 runtime and correct scopes
-  </verify>
-  <done>Deployment guide and manifest file created</done>
+  <verify>menuSetupTemplate opens an HTML dialog instead of a text prompt</verify>
+  <done>Template selector shows visual cards with descriptions</done>
 </task>
 
 ## Success Criteria
-- [ ] README.md rewritten with architecture and template table
-- [ ] docs/DEPLOYMENT.md with step-by-step deployment guide
-- [ ] appsscript.json with correct OAuth scopes
+
+- [ ] `menuSetupTemplate` opens an HTML dialog (not a text prompt)
+- [ ] Template cards show name, ID, description, required columns, and config keys
+- [ ] Selecting a template and clicking "Configurar" generates Config + Data sheets
