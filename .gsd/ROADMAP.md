@@ -5,19 +5,14 @@
 
 ## Must-Haves
 
-- [ ] Selector de plantillas desde el menú con auto-generación de hojas (Config + datos)
-- [ ] Auto-detección de hoja de datos (sin depender de hoja activa)
-- [ ] Diálogo HTML para personalizar envíos (nota adicional, asunto) antes de enviar
-- [ ] Fallback de saludo genérico cuando no hay nombre de destinatario
-- [ ] Redacción revisada: dos puntos en vocativos, sin redundancias, tono institucional PUCV
-- [ ] Parámetros configurables por template visibles en Config (ej: survey_url, extra_note)
+- [x] Selector de plantillas desde el menú con auto-generación de hojas (Config + datos)
+- [x] Auto-detección de hoja de datos (sin depender de hoja activa)
+- [x] Diálogo HTML para personalizar envíos (nota adicional, asunto) antes de enviar
+- [x] Fallback de saludo genérico cuando no hay nombre de destinatario
+- [x] Redacción revisada: dos puntos en vocativos, sin redundancias, tono institucional PUCV
+- [x] Parámetros configurables por template visibles en Config (ej: survey_url, extra_note)
 
-- **Current Phase**: Phase 3: Template Copy Revision (Planning)
-- **Status**: Phase 2 Verified. Ready to plan Phase 3.
-- **Progress**:
-  - [x] Phase 1: Template Config & Auto-Sheet Generation
-  - [x] Phase 2: Enhanced Menu GUI
-  - [ ] Phase 3: Template Copy Revision
+
 
 ## Phases
 
