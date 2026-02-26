@@ -467,7 +467,7 @@ const surveyTemplate = {
   id: 'survey',
   name: 'Encuesta de Percepción',
   description: 'Solicitud de feedback sobre cursos con aviso de certificación.',
-  requiredHeaders: ['nombre', 'correo'],
+  requiredHeaders: ['correo'],
   configKeys: ['survey_url', 'program_name', 'extra_note'],
   senderName: 'PUCV',
   statusColumn: 'Estado Encuesta',
@@ -480,7 +480,7 @@ const surveyTemplate = {
   },
 
   processRow: function(row, headers, rowIndex, extraData) {
-    const nombre = requiredCell(row, headers['nombre'], 'Nombre', rowIndex);
+    const nombre = headers['nombre'] !== undefined ? safeCell(row, headers['nombre']) : '';
     const correo = requiredCell(row, headers['correo'], 'Correo', rowIndex);
 
     const extras = extraData ? extraData.configExtras : {};
