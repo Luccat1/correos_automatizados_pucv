@@ -164,8 +164,8 @@ function parseEmailList(input) {
  * @param {string} fullName
  * @returns {string}
  */
-function extractFirstName(fullName) {
-  if (!fullName) return "";
+function extractFirstName(fullName, fallback) {
+  if (!fullName || !fullName.toString().trim()) return fallback || "";
   const parts = fullName.toString().trim().split(/\s+/);
   return parts[0];
 }

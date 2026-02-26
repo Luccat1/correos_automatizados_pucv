@@ -88,7 +88,7 @@ const certificateTemplate = {
       apellido: apellido,
       correo: correo,
       certificateUrl: enlace,
-      firstName: extractFirstName(nombre),
+      firstName: extractFirstName(nombre, "estudiante"),
       programName: (extraData && extraData.configExtras && extraData.configExtras.program_name) || this.defaults?.programName
     };
   },
@@ -100,9 +100,10 @@ const certificateTemplate = {
    */
   buildHtml: function(data) {
     const programName = data.programName || "un programa académico";
+    const greeting = data.nombre ? `Estimado/a <strong>${data.firstName}</strong>:` : "Estimado/a estudiante:";
     
-    let content = `<p>Estimado(a) <strong>${data.firstName}</strong>:</p>`;
-    content += `<p>Nos complace saludarte e informarte que tu certificado de finalización de <strong>${programName}</strong> ya se encuentra disponible.</p>`;
+    let content = `<p>${greeting}</p>`;
+    content += `<p>Nos es grato informarte que tu certificado de finalización de <strong>${programName}</strong> ya se encuentra disponible.</p>`;
     content += buildButton("Ver Certificado", data.certificateUrl);
     content += buildInfoBox("Para una mejor visualización, te recomendamos abrir el enlace desde un computador. Si tienes problemas para acceder, asegúrate de estar usando el correo electrónico registrado.");
     content += `<p>Atentamente,<br>Equipo PUCV</p>`;
@@ -161,7 +162,7 @@ const confirmationTemplate = {
       nombre, correo, idioma, nivel, horario,
       plazo: plazo || extras.payment_deadline || this.defaults.paymentDeadline,
       esContinuacion,
-      firstName: extractFirstName(nombre),
+      firstName: extractFirstName(nombre, "estudiante"),
       cc,
       paymentUrl: extras.payment_url || this.defaults.paymentUrl,
       discountCode: extras.discount_code || null
@@ -169,8 +170,9 @@ const confirmationTemplate = {
   },
 
   buildHtml: function(data) {
-    let content = `<p>Estimado(a) <strong>${data.firstName}</strong>,</p>`;
-    content += `<p>Nos complace saludarte y confirmarte la <strong>apertura del curso</strong> en el cual te has preinscrito:</p>`;
+    const greeting = data.nombre ? `Estimado/a <strong>${data.firstName}</strong>:` : "Estimado/a estudiante:";
+    let content = `<p>${greeting}</p>`;
+    content += `<p>Te informamos con gusto la <strong>apertura del curso</strong> en el cual te has preinscrito:</p>`;
     
     const courseInfo = `<strong>Idioma:</strong> ${data.idioma}<br><strong>Nivel:</strong> ${data.nivel}<br><strong>Horario:</strong> ${data.horario}`;
     content += buildInfoBox(courseInfo);
@@ -218,7 +220,7 @@ const paymentReminderTemplate = {
 
     return {
       nombre, correo, idioma, nivel,
-      firstName: extractFirstName(nombre),
+      firstName: extractFirstName(nombre, "estudiante"),
       deadlineText: extras.deadline_text || this.defaults.deadlineText,
       paymentUrl: extras.payment_url || this.defaults.paymentUrl
     };
@@ -227,8 +229,9 @@ const paymentReminderTemplate = {
   buildHtml: function(data) {
     const deadline = data.deadlineText;
     const url = data.paymentUrl;
+    const greeting = data.nombre ? `Hola <strong>${data.firstName}</strong>:` : "Hola:";
 
-    let content = `<p>Hola <strong>${data.firstName}</strong>:</p>`;
+    let content = `<p>${greeting}</p>`;
     content += `<p>Te contactamos de manera <strong>urgente</strong> para recordarte que el plazo para la reserva de tu cupo en los cursos de idiomas vence impostergablemente este <strong>${deadline}</strong>.</p>`;
     
     content += buildButton("Pagar con Webpay", url);
@@ -275,15 +278,16 @@ const placementTestTemplate = {
 
     return {
       nombre, correo, userId, password, institutionId,
-      firstName: extractFirstName(nombre),
+      firstName: extractFirstName(nombre, "estudiante"),
       platformUrl: extras.platform_url || this.defaults.platformUrl,
       deadlineText: extras.deadline_text || this.defaults.deadlineText
     };
   },
 
   buildHtml: function(data) {
-    let content = `<p>Estimado(a) <strong>${data.firstName}</strong>:</p>`;
-    content += `<p>Esperamos que te encuentres muy bien. Te escribimos para enviarte las credenciales de acceso para rendir tu <strong>Placement Test</strong> del Programa de Idiomas PUCV.</p>`;
+    const greeting = data.nombre ? `Estimado/a <strong>${data.firstName}</strong>:` : "Estimado/a estudiante:";
+    let content = `<p>${greeting}</p>`;
+    content += `<p>Te hacemos llegar las credenciales de acceso para rendir tu <strong>Placement Test</strong> del Programa de Idiomas PUCV.</p>`;
     
     let credentials = `<strong>Plataforma:</strong> <a href="${data.platformUrl}">${data.platformUrl}</a><br>`;
     credentials += `<strong>User ID:</strong> ${data.userId}<br>`;
@@ -338,12 +342,13 @@ const codeDeliveryTemplate = {
 
     return {
       nombre, correo, codigo, tipo,
-      firstName: extractFirstName(nombre)
+      firstName: extractFirstName(nombre, "estudiante")
     };
   },
 
   buildHtml: function(data) {
-    let content = `<p>Hola <strong>${data.firstName}</strong>:</p>`;
+    const greeting = data.nombre ? `Hola <strong>${data.firstName}</strong>:` : "Hola:";
+    let content = `<p>${greeting}</p>`;
     content += `<p>A continuación te hacemos entrega de tu código <strong>${data.tipo}</strong> solicitado:</p>`;
     
     content += `
@@ -425,12 +430,12 @@ const reportDeliveryTemplate = {
       professorName,
       course,
       reportUrl,
-      firstName: extractFirstName(professorName)
+      firstName: extractFirstName(professorName) // No fallback needed for professor
     };
   },
 
   buildHtml: function(data) {
-    let content = `<p>Estimado(a) docente <strong>${data.professorName}</strong>:</p>`;
+    let content = `<p>Estimado/a docente <strong>${data.professorName}</strong>:</p>`;
     content += `<p>Junto con saludarte cordialmente, la Unidad de Evaluación Docente hace entrega de los resultados de la encuesta de percepción estudiantil para el siguiente curso:</p>`;
     
     content += buildInfoBox(`<strong>Curso:</strong> ${data.course}`);
@@ -472,7 +477,7 @@ const surveyTemplate = {
 
     return {
       nombre, correo,
-      firstName: extractFirstName(nombre),
+      firstName: extractFirstName(nombre, "estudiante"),
       surveyUrl: extras.survey_url || this.defaults.surveyUrl,
       programName: extras.program_name || this.defaults.programName,
       extraNote: extras.extra_note || null
@@ -482,14 +487,15 @@ const surveyTemplate = {
   buildHtml: function(data) {
     const url = data.surveyUrl;
     const program = data.programName;
+    const greeting = data.nombre ? `Estimado/a <strong>${data.firstName}</strong>:` : "Estimado/a estudiante:";
 
-    let content = `<p>Estimado(a) <strong>${data.firstName}</strong>:</p>`;
+    let content = `<p>${greeting}</p>`;
     content += `<p>Para nosotros es fundamental conocer tu opinión sobre el desarrollo y calidad de <strong>${program}</strong>.</p>`;
     content += `<p>Te invitamos a completar la siguiente encuesta de percepción, la cual no te tomará más de 5 minutos:</p>`;
     
     content += buildButton("Completar Encuesta", url);
 
-    content += buildWarningBox(`<strong>Nota importante:</strong> Te recordamos que la completación de esta encuesta es un requisito para la gestión y posterior envío de tus certificados de aprobación.`);
+    content += buildWarningBox(`<strong>Nota importante:</strong> Recuerda que completar esta encuesta es un requisito para el envío de tus certificados de aprobación.`);
 
     if (data.extraNote) {
       content += buildInfoBox(data.extraNote);
