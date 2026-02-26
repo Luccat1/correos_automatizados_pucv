@@ -28,7 +28,7 @@
 - Quota checking
 
 ### Phase 2: Template System
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: Build `Templates.gs` with the registry pattern and port all existing email types.
 **Delivers**:
 - Template registry (register/get pattern)
