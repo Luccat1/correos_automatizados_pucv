@@ -7,6 +7,27 @@
 // Global cache for Gmail aliases
 let _ALIASES_CACHE = null;
 
+// PUCV 100-year anniversary palette
+const COLORS = {
+  primary: '#24588d',
+  secondary: '#1d71b8',
+  accent: '#008cba',
+  light: '#36a9e1',
+  lightest: '#a3d1e3',
+  danger: '#e73a34',
+  dangerSoft: '#ee7269',
+  purple: '#9366a9',
+  yellow: '#f4ce46',
+  teal: '#30b6be',
+  bg: '#ece5e0',
+  white: '#ffffff',
+  text: '#333333',
+  textLight: '#666666',
+  border: '#e0e0e0'
+};
+
+const DEFAULT_LOGO_URL = "https://comunicacionestrategica.pucv.cl/LOGO100/7/color.png";
+
 /**
  * Returns the active sheet from the bound spreadsheet.
  * @returns {GoogleAppsScript.Spreadsheet.Sheet}
@@ -326,4 +347,165 @@ function shareFileAsViewer(fileId, email) {
 function shareFileWithMultiple(fileId, emailList) {
   if (!emailList || !Array.isArray(emailList)) return [];
   return emailList.map(email => shareFileAsViewer(fileId, email));
+}
+
+/**
+ * Master HTML layout function with institutional branding.
+ * @param {Object} options
+ * @returns {string} Fully rendered HTML string.
+ */
+function buildEmailLayout(options) {
+  const logoUrl = options.logoUrl || DEFAULT_LOGO_URL;
+  const logoAlt = options.logoAlt || "PUCV";
+  const headerTitle = options.headerTitle || "UNIDAD DE EVALUACIÓN DOCENTE CELE";
+  const footerLines = options.footerLines || ["Pontificia Universidad Católica de Valparaíso", "Dirección General de Asuntos Internacionales"];
+  const headerColor = options.headerColor || COLORS.primary;
+
+  const logoHtml = options.logoLink 
+    ? `<a href="${options.logoLink}" target="_blank" style="text-decoration: none;"><img src="${logoUrl}" alt="${logoAlt}" style="max-width: 250px; height: auto; border: 0; outline: none; margin-bottom: 20px;"></a>`
+    : `<img src="${logoUrl}" alt="${logoAlt}" style="max-width: 250px; height: auto; margin-bottom: 20px;">`;
+
+  const alertBandHtml = options.alertBand 
+    ? `<div style="background-color: ${COLORS.danger}; color: ${COLORS.white}; padding: 10px; text-align: center; font-weight: bold; font-family: sans-serif; font-size: 14px;">${options.alertBand}</div>`
+    : "";
+
+  const extraNoteHtml = options.extraNote
+    ? `<div style="background-color: #fff9c4; border-left: 4px solid ${COLORS.yellow}; padding: 15px; margin-top: 25px; font-family: sans-serif; font-size: 14px; color: ${COLORS.text};">
+         <strong style="color: #616161;">Nota adicional:</strong><br>${options.extraNote}
+       </div>`
+    : "";
+
+  const footerHtml = footerLines.map(line => `<p style="margin: 5px 0;"><strong>${line}</strong></p>`).join("");
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    .container { max-width: 600px; margin: 20px auto; border: 1px solid ${COLORS.border}; }
+    .header { background-color: ${headerColor}; padding: 25px; text-align: center; }
+    .content { padding: 40px; background-color: ${COLORS.white}; font-size: 16px; line-height: 1.6; color: ${COLORS.text}; }
+    .footer { background-color: #f8f8f8; padding: 30px; text-align: center; font-size: 13px; color: ${COLORS.textLight}; border-top: 1px solid ${COLORS.border}; }
+  </style>
+</head>
+<body style="background-color: ${COLORS.bg}; font-family: Arial, sans-serif; padding: 20px;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: ${COLORS.white}; border: 1px solid ${COLORS.border};">
+    <div style="padding: 20px; text-align: center;">
+      ${logoHtml}
+    </div>
+    <div style="background-color: ${headerColor}; padding: 20px; text-align: center; color: ${COLORS.white}; font-family: sans-serif;">
+      <h1 style="margin: 0; font-size: 20px; letter-spacing: 1px;">${headerTitle}</h1>
+    </div>
+    ${alertBandHtml}
+    <div style="padding: 40px; line-height: 1.6; color: ${COLORS.text}; font-family: sans-serif; font-size: 16px;">
+      ${options.content}
+      ${extraNoteHtml}
+    </div>
+    <div style="background-color: #f9f9f9; padding: 30px; text-align: center; font-family: sans-serif; font-size: 12px; color: ${COLORS.textLight}; border-top: 1px solid ${COLORS.border};">
+      ${footerHtml}
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Returns an HTML button string.
+ * @param {string} text
+ * @param {string} url
+ * @param {string} [color]
+ * @returns {string}
+ */
+function buildButton(text, url, color) {
+  const btnColor = color || COLORS.primary;
+  return `
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${url}" target="_blank" style="background-color: ${btnColor}; color: ${COLORS.white} !important; text-decoration: none; padding: 15px 30px; border-radius: 4px; font-weight: bold; display: inline-block; font-family: sans-serif;">${text}</a>
+    </div>
+  `;
+}
+
+/**
+ * Returns a styled callout/info box HTML string.
+ * @param {string} content
+ * @param {string} [borderColor]
+ * @returns {string}
+ */
+function buildInfoBox(content, borderColor) {
+  const border = borderColor || COLORS.primary;
+  return `
+    <div style="background-color: #f0f7ff; border-left: 5px solid ${border}; padding: 15px; margin: 20px 0; font-family: sans-serif; font-size: 15px;">
+      ${content}
+    </div>
+  `;
+}
+
+/**
+ * Returns a yellow warning box.
+ * @param {string} content
+ * @returns {string}
+ */
+function buildWarningBox(content) {
+  return `
+    <div style="background-color: #fff9c4; border: 1px solid ${COLORS.yellow}; padding: 15px; margin: 20px 0; font-family: sans-serif; font-size: 14px; color: #616161;">
+      ${content}
+    </div>
+  `;
+}
+
+/**
+ * Creates a custom menu in Google Sheets.
+ * @param {Array.<Object>} menuItems - Array of {label, functionName} or {separator: true}.
+ */
+function buildMenu(menuItems) {
+  const ui = SpreadsheetApp.getUi();
+  const menu = ui.createMenu('📧 Correos PUCV');
+  
+  menuItems.forEach(item => {
+    if (item.separator) {
+      menu.addSeparator();
+    } else {
+      menu.addItem(item.label, item.functionName);
+    }
+  });
+  
+  menu.addToUi();
+}
+
+/**
+ * Shows a YES/NO confirmation dialog.
+ * @param {string} title
+ * @param {string} message
+ * @returns {boolean}
+ */
+function confirmAction(title, message) {
+  const ui = SpreadsheetApp.getUi();
+  const response = ui.alert(title, message, ui.ButtonSet.YES_NO);
+  return response === ui.Button.YES;
+}
+
+/**
+ * Shows an info alert dialog.
+ * @param {string} title
+ * @param {string} message
+ */
+function showAlert(title, message) {
+  SpreadsheetApp.getUi().alert(title, message, SpreadsheetApp.getUi().ButtonSet.OK);
+}
+
+/**
+ * Shows a formatted results summary dialog.
+ * @param {number} processed
+ * @param {number} errors
+ */
+function showResult(processed, errors) {
+  const title = "Proceso Finalizado";
+  const message = `✅ Resumen del envío:\n\n` +
+                  `• Procesados con éxito: ${processed}\n` +
+                  `• Errores encontrados: ${errors}\n\n` +
+                  `Revisa la columna de estado para más detalles.`;
+  showAlert(title, message);
 }
