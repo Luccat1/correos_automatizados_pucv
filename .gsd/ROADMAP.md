@@ -12,6 +12,13 @@
 - [ ] Redacción revisada: dos puntos en vocativos, sin redundancias, tono institucional PUCV
 - [ ] Parámetros configurables por template visibles en Config (ej: survey_url, extra_note)
 
+- **Current Phase**: Phase 3: Template Copy Revision (Planning)
+- **Status**: Phase 2 Verified. Ready to plan Phase 3.
+- **Progress**:
+  - [x] Phase 1: Template Config & Auto-Sheet Generation
+  - [x] Phase 2: Enhanced Menu GUI
+  - [ ] Phase 3: Template Copy Revision
+
 ## Phases
 
 ### Phase 1: Template Config & Auto-Sheet Generation
@@ -24,7 +31,7 @@
 - Auto-detección de hoja de datos por nombre (configurado en Config como `data_sheet`)
 
 ### Phase 2: Enhanced Menu GUI
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: Crear diálogos HTML para personalizar envíos y aprovechar la UI de Google Sheets.
 **Delivers**:
 - Diálogo HTML pre-envío para editar: asunto, nota adicional, CC/BCC

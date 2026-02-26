@@ -3,11 +3,11 @@
 ## Current Position
 
 - **Milestone**: v2.0 — Enhanced UX & Template Polish
-- **Current Phase**: Phase 2: Enhanced Menu GUI (Planning Complete)
-- **Status**: Phase 2 planned. Ready for execution.
+- **Current Phase**: Phase 3: Template Copy Revision (Planning)
+- **Status**: Phase 2 Verified. Ready to plan Phase 3.
 - **Progress**:
   - [x] Phase 1: Template Config & Auto-Sheet Generation
-  - [/] Phase 2: Enhanced Menu GUI (Planned)
+  - [x] Phase 2: Enhanced Menu GUI
   - [ ] Phase 3: Template Copy Revision
     - [x] Phase 1: Template Config & Auto-Sheet Generation
     - [ ] Phase 2: Enhanced Menu GUI
