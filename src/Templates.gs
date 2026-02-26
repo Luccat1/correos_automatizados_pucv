@@ -38,13 +38,16 @@ function getTemplate(id) {
 }
 
 /**
- * Lists all registered templates.
- * @returns {Array.<Object>} [{ id, name }]
+ * Lists all registered templates with metadata for the selector UI.
+ * @returns {Array.<Object>} [{ id, name, description, requiredHeaders, configKeys }]
  */
 function listTemplates() {
   return Object.keys(_REGISTRY).map(id => ({
     id: id,
-    name: _REGISTRY[id].name
+    name: _REGISTRY[id].name,
+    description: _REGISTRY[id].description || '',
+    requiredHeaders: _REGISTRY[id].requiredHeaders || [],
+    configKeys: _REGISTRY[id].configKeys || []
   }));
 }
 
@@ -57,6 +60,7 @@ function listTemplates() {
 const certificateTemplate = {
   id: 'certificate',
   name: 'Envío de Certificados',
+  description: 'Envío de certificados con enlace a Google Drive y CC institucional.',
   requiredHeaders: ['nombre', 'correo', 'enlace'],
   configKeys: ['program_name'],
   senderName: 'PUCV',
@@ -119,6 +123,7 @@ const certificateTemplate = {
 const confirmationTemplate = {
   id: 'confirmation',
   name: 'Confirmación de Apertura',
+  description: 'Confirmación de inicio de curso con detalles de pago y descuentos.',
   requiredHeaders: ['nombre', 'correo', 'idioma', 'nivel', 'horario'],
   configKeys: ['payment_url', 'payment_deadline', 'discount_code'],
   senderName: 'Programa Idiomas PUCV',
@@ -198,6 +203,7 @@ const confirmationTemplate = {
 const paymentReminderTemplate = {
   id: 'payment_reminder',
   name: 'Recordatorio de Pago',
+  description: 'Recordatorio urgente de plazo de pago con estilo destacado.',
   requiredHeaders: ['nombre', 'correo', 'idioma', 'nivel'],
   configKeys: ['deadline_text', 'payment_url'],
   senderName: 'Programa Idiomas PUCV',
@@ -255,6 +261,7 @@ const paymentReminderTemplate = {
 const placementTestTemplate = {
   id: 'placement_test',
   name: 'Placement Test',
+  description: 'Entrega de credenciales para plataforma de test de nivel.',
   requiredHeaders: ['nombre', 'correo', 'user id', 'password'],
   configKeys: ['platform_url', 'deadline_text'],
   senderName: 'Programa Idiomas PUCV',
@@ -325,6 +332,7 @@ const placementTestTemplate = {
 const codeDeliveryTemplate = {
   id: 'code_delivery',
   name: 'Envío de Códigos',
+  description: 'Entrega de códigos de acceso a materiales o plataformas.',
   requiredHeaders: ['nombre', 'correo', 'codigo'],
   configKeys: ['code_type'],
   senderName: 'Centro de Idiomas PUCV',
@@ -373,6 +381,7 @@ const codeDeliveryTemplate = {
 const reportDeliveryTemplate = {
   id: 'report_delivery',
   name: 'Entrega de Informes',
+  description: 'Envío de informes de evaluación docente compartidos por Drive.',
   requiredHeaders: [], // Special case: uses fixed column indexes from Informe script
   configKeys: ['directory_sheet_name'],
   senderName: 'Unidad de Evaluación Docente CELE',
@@ -457,6 +466,7 @@ const reportDeliveryTemplate = {
 const surveyTemplate = {
   id: 'survey',
   name: 'Encuesta de Percepción',
+  description: 'Solicitud de feedback sobre cursos con aviso de certificación.',
   requiredHeaders: ['nombre', 'correo'],
   configKeys: ['survey_url', 'program_name', 'extra_note'],
   senderName: 'PUCV',
