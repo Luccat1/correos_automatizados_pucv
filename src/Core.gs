@@ -4,6 +4,9 @@
  * This file contains generic helper functions for sheet access, utilities, and email sending.
  */
 
+// Global cache for Gmail aliases
+let _ALIASES_CACHE = null;
+
 /**
  * Returns the active sheet from the bound spreadsheet.
  * @returns {GoogleAppsScript.Spreadsheet.Sheet}
@@ -171,4 +174,156 @@ function checkQuota() {
  */
 function sleep(ms) {
   Utilities.sleep(ms);
+}
+
+/**
+ * Main email dispatch function.
+ * @param {Object} options
+ * @param {string} options.to - Recipient.
+ * @param {string} options.subject - Subject line.
+ * @param {string} options.htmlBody - Rendered HTML.
+ * @param {string} [options.plainBody] - Plain text fallback.
+ * @param {string} [options.cc] - Comma-separated CC list.
+ * @param {string} [options.bcc] - Comma-separated BCC list.
+ * @param {string} [options.senderName] - Display name.
+ * @param {string} [options.senderAlias] - Optional alias email.
+ * @param {boolean} [options.asDraft] - If true, create draft instead of sending.
+ * @returns {Object} { success: boolean, mode: 'sent'|'draft'|'error', timestamp: string, error?: string }
+ */
+function sendEmail(options) {
+  try {
+    const emailOptions = {
+      htmlBody: options.htmlBody,
+      name: options.senderName || "PUCV"
+    };
+
+    if (options.plainBody) emailOptions.body = options.plainBody;
+    if (options.cc) emailOptions.cc = options.cc;
+    if (options.bcc) emailOptions.bcc = options.bcc;
+
+    // Handle Alias
+    if (options.senderAlias) {
+      const aliases = _getAliasesCache();
+      if (aliases.includes(options.senderAlias)) {
+        emailOptions.from = options.senderAlias;
+      } else {
+        console.warn(`Alias ${options.senderAlias} no encontrado. Se usará la cuenta principal.`);
+      }
+    }
+
+    if (options.asDraft) {
+      GmailApp.createDraft(options.to, options.subject, options.plainBody || "", emailOptions);
+      return { success: true, mode: 'draft', timestamp: now() };
+    } else {
+      GmailApp.sendEmail(options.to, options.subject, options.plainBody || "", emailOptions);
+      return { success: true, mode: 'sent', timestamp: now() };
+    }
+  } catch (e) {
+    console.error("Error en sendEmail:", e);
+    return { success: false, mode: 'error', timestamp: now(), error: e.toString() };
+  }
+}
+
+/**
+ * Private helper to cache Gmail aliases.
+ * @private
+ * @returns {Array.<string>}
+ */
+function _getAliasesCache() {
+  if (_ALIASES_CACHE === null) {
+    try {
+      _ALIASES_CACHE = GmailApp.getAliases();
+    } catch (e) {
+      console.warn("No se pudieron obtener los alias del remitente.");
+      _ALIASES_CACHE = [];
+    }
+  }
+  return _ALIASES_CACHE;
+}
+
+/**
+ * Orchestrates batch sending with throttling and quota protection.
+ * @param {Array.<Array>} rows - Data rows to process.
+ * @param {Function} processFn - Callback (row, index) => { to, subject, htmlBody, plainBody, cc, bcc } | null
+ * @param {Object} options - Config options.
+ * @returns {Object} { processed: number, errors: number, statuses: Array.<Array> }
+ */
+function sendBatch(rows, processFn, options) {
+  let processed = 0;
+  let errors = 0;
+  const statuses = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    // Check batch limit
+    if (options.batchLimit && processed >= options.batchLimit) {
+      console.info("Batch limit reached.");
+      statuses.push(["LÍMITE ALCANZADO"]);
+      continue;
+    }
+
+    // Check quota protection
+    if (checkQuota() < 5) {
+      console.error("Quota nearly exhausted. Stopping batch.");
+      statuses.push(["ERROR: QUOTA INSUFICIENTE"]);
+      continue;
+    }
+
+    const rowData = processFn(rows[i], i);
+    if (!rowData) {
+      statuses.push(["SALTADO"]);
+      continue;
+    }
+
+    const result = sendEmail({
+      ...rowData,
+      senderName: options.senderName,
+      senderAlias: options.senderAlias,
+      asDraft: options.asDraft
+    });
+
+    if (result.success) {
+      const statusText = result.mode === 'draft' ? "BORRADOR CREADO" : "ENVIADO";
+      statuses.push([`${statusText} (${result.timestamp})`]);
+      processed++;
+    } else {
+      statuses.push([`ERROR: ${result.error}`]);
+      errors++;
+    }
+
+    // Throttling
+    if (options.sleepEvery && (i + 1) % options.sleepEvery === 0) {
+      sleep(options.sleepMs || 1000);
+    }
+  }
+
+  return { processed, errors, statuses };
+}
+
+/**
+ * Shares a Google Drive file with the given email as viewer.
+ * @param {string} fileId - ID of the file to share.
+ * @param {string} email - Recipient email.
+ * @returns {Object} { success: boolean, error?: string }
+ */
+function shareFileAsViewer(fileId, email) {
+  try {
+    if (!fileId || !email) return { success: false, error: "Falta ID de archivo o email" };
+    const file = DriveApp.getFileById(fileId);
+    file.addViewer(email.trim());
+    return { success: true };
+  } catch (e) {
+    console.error(`Error compartiendo archivo ${fileId} con ${email}:`, e);
+    return { success: false, error: e.toString() };
+  }
+}
+
+/**
+ * Shares a Google Drive file with multiple emails.
+ * @param {string} fileId - ID of the file to share.
+ * @param {Array.<string>} emailList - Array of emails.
+ * @returns {Array.<Object>} Array of results.
+ */
+function shareFileWithMultiple(fileId, emailList) {
+  if (!emailList || !Array.isArray(emailList)) return [];
+  return emailList.map(email => shareFileAsViewer(fileId, email));
 }
