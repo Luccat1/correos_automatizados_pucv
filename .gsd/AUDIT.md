@@ -1,84 +1,53 @@
-# Milestone Audit: v1.0 — Unified Email System
+# Milestone Audit: v2.0 — Enhanced UX & Template Polish
 
 **Audited:** 2026-02-26
 
 ## Summary
 
 | Metric | Value |
-| :--- | :--- |
-| Phases | 4 |
-| Plans Executed | 10 |
-| Gap Closures | 0 |
-| Technical Debt Items | 3 |
-| All Phases Passed? | ✅ Yes |
+|--------|-------|
+| Phases | 4 (+1 gap closure) |
+| Gap closures | 1 (Phase 5: legacy cleanup & GitHub prep) |
+| Technical debt items | 3 |
+| ADRs recorded | 3 |
 
-## SPEC Success Criteria
+## Must-Haves Status
 
-| # | Requirement | Status | Evidence |
-| :--- | :--- | :--- | :--- |
-| 1 | Single `Core.gs` replaces all duplicated helper functions | ✅ | `src/Core.gs` — 24 functions, JSDoc'd |
-| 2 | Shared HTML base layout produces consistent emails | ✅ | `buildEmailLayout()` in Core.gs |
-| 3 | All 7 templates work correctly | ✅ | Phase 2 VERIFICATION.md — all 7 IDs registered |
-| 4 | Adding a new template requires editing only `Templates.gs` | ✅ | `docs/CREATING_TEMPLATES.md` documents the pattern |
-| 5 | Custom menu appears with send/test/preview | ✅ | Phase 3 VERIFICATION.md — `onOpen()` verified |
-| 6 | Clean code: JSDoc, consistent naming, no hardcoded IDs | ✅ | Phase 1 VERIFICATION.md |
-| 7 | Documentation: README + deployment + template guide | ✅ | Phase 4 VERIFICATION.md |
+| Requirement | Verified | Evidence |
+|-------------|----------|----------|
+| Selector de plantillas con auto-generación de hojas | ✅ | `TemplateSelector.html`, `menuSetupTemplate()` in `Main.gs:419` |
+| Auto-detección de hoja de datos (sin hoja activa) | ✅ | `_getDataSheet()` reads `data_sheet` from Config; `Datos_{id}` naming in `Main.gs:458` |
+| Diálogo HTML para personalizar envíos | ✅ | `SendDialog.html` with Subject, Note, CC/BCC fields |
+| Fallback de saludo genérico | ✅ | `extractFirstName(fullName, fallback)` in `Core.gs:162-171` |
+| Redacción revisada (tono institucional PUCV) | ✅ | All 7 templates updated per Phase 3 VERIFICATION.md |
+| Parámetros configurables por template en Config | ✅ | `configKeys` declared per template; `_generateSheets` writes them to Config sheet |
 
 ## Phase Quality
 
 | Phase | Verdict | Gap Closures | Notes |
-| :--- | :--- | :--- | :--- |
-| 1: Core Engine | PASS | 0 | Clean execution, no issues |
-| 2: Template System | PASS | 0 | All 7 templates ported successfully |
-| 3: Main Entry Point | PASS | 0 | Menu + batch logic clean |
-| 4: Documentation | PASS | 0 | All deliverables met |
+|-------|---------|--------------|-------|
+| 1: Core Engine | PASS | 0 | Clean foundation: 24 documented functions in Core.gs |
+| 2: Menu GUI | PASS | 0 | Professional HTML dialogs; SendDialog + Preview modal |
+| 3: Copy Revision | PASS | 0 | All 7 templates polished; fallback "estudiante" implemented |
+| 4: Selector GUI & Auto-Detection | PASS | 0 | Rich card selector; template-specific sheet naming |
+| 5: Gap Closure & GitHub Prep | PASS | 1 | Legacy scripts removed; `.gitignore` created; repo cleaned |
 
-## ⚠️ Concerns
+## Concerns
 
-### 1. Legacy Files Still Present
-The repository still contains **~12 legacy files** from the original scripts that are now superseded by the unified system:
-
-| File | Type | Action Needed |
-| :--- | :--- | :--- |
-| `CertificatesDiplomado.js` | Old script | DELETE |
-| `Code Sending Script.json` | Old config | DELETE |
-| `ConfirmationEmail` | Old script | DELETE |
-| `EnvioCertificados` | Old script | DELETE |
-| `PaymentReminder.js` | Old script | DELETE |
-| `PlacementTest` | Old script | DELETE |
-| `Informe` | Old script | DELETE |
-| `script_envio` | Old script | DELETE |
-| `script_envio.dart` | Dart port (unused) | DELETE |
-| `GSD-STYLE.md` | GSD framework file | REVIEW |
-| `PROJECT_RULES.md` | GSD framework file | REVIEW |
-| `model_capabilities.yaml` | GSD framework file | REVIEW |
-
-### 2. GSD Framework Artifacts
-The `adapters/`, `scripts/`, and several GSD-specific files (`GSD-STYLE.md`, `PROJECT_RULES.md`, `model_capabilities.yaml`) are part of the GSD methodology, not the email system. Decide whether to keep them for future development or remove for a clean GitHub repo.
-
-### 3. Docs Folder Pollution
-`docs/` contains 3 GSD-related files (`model-selection-playbook.md`, `runbook.md`, `token-optimization-guide.md`) alongside the 2 project docs. These should be separated or removed.
-
-### 4. No `.gitignore`
-The repository lacks a `.gitignore` file to exclude unnecessary files from version control.
-
-### 5. Deferred Feature: Scheduled Sends
-DECISIONS.md notes that **scheduled sends** (time-based triggers via `ScriptApp.newTrigger`) were requested but deferred. This is acknowledged but not yet addressed.
-
-### 6. No Runtime Testing
-All verification was structural (code review). No actual emails were sent during this milestone because we don't have access to the GAS runtime. Real-world testing should happen during the first deployment.
+1. **ROADMAP must-haves not checked off**: Lines 8-13 in `ROADMAP.md` still show `[ ]` instead of `[x]`. The Phase 5 VERIFICATION says they were checked, but current file shows otherwise. This is a **documentation inconsistency**.
+2. **TODO.md items not closed**: 5 of 6 items in `TODO.md` are still `[ ]` even though their corresponding features have been implemented. This creates confusion about what's actually pending vs done.
+3. **No live deployment test**: All verifications were code-level (structural). No empirical evidence of actually running the script in a Google Sheet has been captured (no screenshot or execution log).
 
 ## Recommendations
 
-1. **Clean the repo** — Delete all legacy script files and GSD framework artifacts before pushing to GitHub. This is already captured in TODO.md.
-2. **Add `.gitignore`** — At minimum, ignore `.gsd/` (internal state) and any OS files.
-3. **First deployment test** — After cleanup, copy the 3 `.gs` files + manifest into a real Google Sheet and run through all 5 menu actions with test data.
-4. **Schedule sends** — If needed, add a Phase 5 for `ScriptApp.newTrigger`-based scheduling.
-5. **Update ROADMAP must-haves** — The checkboxes in ROADMAP.md lines 8-14 are still unchecked despite all being complete.
+1. **Fix ROADMAP must-haves**: Check off all 6 must-have items in `ROADMAP.md` lines 8-13
+2. **Close TODO items**: Mark implemented items in `TODO.md` as `[x]`
+3. **Remove stale ROADMAP metadata**: Lines 15-20 contain orphaned progress metadata that duplicates and contradicts the phase statuses below
+4. **Live validation**: Deploy to a test Google Sheet and capture a screenshot or execution log as empirical evidence before archiving the milestone
+5. **Archive milestone**: Once gaps are closed, archive v2.0 and prepare for the next milestone
 
-## Technical Debt
+## Technical Debt to Address
 
-- [ ] Clean legacy files from repository (TODO item)
-- [ ] Add `.gitignore` for clean version control
-- [ ] Runtime test with real Google Sheet deployment
-- [ ] ROADMAP.md must-have checkboxes still unchecked (cosmetic)
+- [ ] No live deployment test captured (empirical validation gap)
+- [ ] `ROADMAP.md` contains stale inline progress section (lines 15-20) that should be removed
+- [ ] `TODO.md` items not synchronized with completed work

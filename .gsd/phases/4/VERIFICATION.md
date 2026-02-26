@@ -1,11 +1,13 @@
-## Phase 4 Verification: Documentation & Deployment
+# Phase 4 Verification — Template Selector GUI & Data Sheet Auto-Detection
 
-### Must-Haves
-- [x] Updated `README.md` — VERIFIED. Covers 3-file architecture, provides a catalog of 7 templates, and links to specialized guides.
-- [x] Template creation guide — VERIFIED. `docs/CREATING_TEMPLATES.md` provides technical reference for `processRow`, `buildHtml`, and logic helpers.
-- [x] Deployment instructions — VERIFIED. `docs/DEPLOYMENT.md` provides clear manual installation steps and configuration sheet reference.
-- [x] Updated `AGENTS.md` — VERIFIED. Accurately reflects the new unified logic and patterns for future AI collaborators.
-- [x] Updated `appsscript.json` manifest — VERIFIED. Correct V8 runtime and scoped OAuth permissions for production use.
+## Must-Haves
+- [x] `menuSetupTemplate` opens HTML dialog with template cards — **VERIFIED**
+- [x] Template cards show name, ID, and descriptions — **VERIFIED**
+- [x] `_generateSheets` creates `Datos_{templateId}` sheets — **VERIFIED**
+- [x] `_getDataSheet` lists available sheets on error — **VERIFIED**
+- [x] `SendDialog` displays the data source sheet name — **VERIFIED**
+- [x] GSD Documentation (ARCHITECTURE/STACK) updated for v2.0 — **VERIFIED**
 
-### Verdict: PASS
-The project is now fully documented for both end-users (administrators) and developers (extenders). The unified system is ready for dissemination across PUCV units.
+## Verdict: PASS
+
+The system is now a cohesive, professional-grade tool. Users can visually select templates, and the automation handles sheet naming and detection intelligently, reducing user error and allowing multiple campaign setups within the same document.

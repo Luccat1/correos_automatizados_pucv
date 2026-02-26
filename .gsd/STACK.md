@@ -20,7 +20,16 @@
 | `Session` | Get active user email, script timezone |
 | `Utilities` | Date formatting, sleep/throttle |
 | `Browser` / `SpreadsheetApp.getUi()` | Alert dialogs in bound scripts |
+| `HtmlService` | Custom rich GUI dialogs (SendDialog, Selector) |
 | `Logger` / `console` | Execution logging |
+
+## Frontend (GUI Layer)
+
+| Technology | Purpose |
+|------------|---------|
+| HTML5 / CSS3 | Dialog structure and styling |
+| Apps Script Templates | Server-side variable injection in HTML (`<?= var ?>`) |
+| Client-side JS | Form handling and `google.script.run` callbacks |
 
 ## Dependencies
 
@@ -28,7 +37,8 @@
 No external libraries — all scripts use only built-in GAS services.
 
 ### Development
-No build tools, linters, or formatters configured.
+- **GSD Methodology**: Specification-driven development.
+- **Mermaid**: Logic and architecture visualization.
 
 ## Infrastructure
 

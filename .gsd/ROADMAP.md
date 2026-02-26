@@ -48,9 +48,20 @@ Revision of all template copies for institutional tone. Standardized greetings a
 - Tono alineado con el estilo de campañas IDIOMAS PUCV
 
 ### Phase 4: Template Selector GUI & Data Sheet Auto-Detection
-**Status**: 🗓️ Planned
-**Objective**: Mejorar el selector de plantillas con un diálogo HTML visual y hacer que el sistema detecte automáticamente la hoja de datos sin depender de la hoja activa.
+**Status**: ✅ Complete
+Improved template selector with HTML visual dialogue; smart data sheet auto-detection (template-specific naming logic).
 **Delivers**:
 - Selector de plantillas como diálogo HTML con nombres, descripciones y preview
 - Auto-detección de hoja de datos por nombre configurado en Config (sin depender de hoja activa)
 - Feedback claro al usuario cuando la hoja de datos no se encuentra
+
+### Phase 6: Gap Closure — Audit Fixes
+
+**Status**: ⬜ Not Started
+**Objective**: Address documentation inconsistencies and empirical validation gap found during v2.0 audit.
+**Delivers**:
+
+- ROADMAP must-haves checked off
+- TODO.md items synchronized
+- Stale metadata removed from ROADMAP
+- Live deployment evidence (user action)
