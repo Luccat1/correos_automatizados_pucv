@@ -1,0 +1,17 @@
+# GSD internal state (development methodology)
+.gsd/
+
+# Agent configuration
+.agent/
+.agents/
+.gemini/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+*.swp
+*.swo
+*~
