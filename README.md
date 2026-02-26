@@ -1,82 +1,49 @@
+# Correos Automatizados PUCV 📧
 
-# Envío de códigos a estudiantes (Apps Script independiente)
+Sistema unificado y extensible de automatización de correos electrónicos para el Centro de Idiomas PUCV y unidades académicas relacionadas, construido sobre Google Apps Script.
 
-Script para enviar por correo códigos de libros o pruebas a estudiantes, leyendo desde una Google Sheet. Pensado para el Centro de Idiomas PUCV. Proyecto **independiente** de Apps Script (no vinculado a un documento).
+## 🚀 Descripción General
 
-## Qué hace
-- Lee una hoja de cálculo con columnas estándar.
-- Genera códigos únicos si faltan.
-- Envía correos con asunto y cuerpo personalizables usando `{{placeholders}}`.
-- Marca `enviado = TRUE` y registra `fecha_envio`.
-- Escribe un log de ejecución en la pestaña `Logs`.
-- Incluye modo simulación (`DRY_RUN`).
+Este sistema permite gestionar campañas de comunicación institucional de alta calidad (certificados, recordatorios, encuestas, etc.) directamente desde Google Sheets. Utiliza un motor centralizado para garantizar la consistencia visual y técnica, permitiendo que cada hoja de cálculo se comporte como una aplicación independiente con su propio menú personalizado.
 
-## Requisitos
-- Cuenta con acceso a Gmail y a la Google Sheet.
-- Permisos de OAuth para `spreadsheets` y `gmail.send`.
+## 🏗️ Arquitectura
 
-## Estructura de la Sheet
-Pestaña por defecto: `Listado`
+El sistema se basa en una estructura de tres archivos principales que deben copiarse en el editor de Apps Script de cada hoja:
 
-Encabezados obligatorios (minúsculas recomendadas):
-- `correo`
-- `nombre`
-- `codigo`
-- `enviado` (booleano)
-- `fecha_envio` (texto o fecha)
+1.  **`Core.gs` (El Motor):** Contiene toda la lógica compartida.
+    *   Manejo de hojas de cálculo y mapeo de cabeceras.
+    *   Envio masivo de correos con control de cuotas y throttling.
+    *   Maquetación HTML institucional (Header/Footer PUCV).
+    *   Helpers para compartir archivos en Google Drive.
+    *   Constructor de menús y diálogos de usuario.
 
-Columnas opcionales:
-- `asunto_opcional` (plantilla por fila)
-- `cuerpo_opcional` (plantilla HTML por fila)
-- `tipo_opcional` (por ejemplo: `libro`, `prueba`...)
+2.  **`Templates.gs` (El Registro):** Centraliza la definición de los correos.
+    *   Registro de plantillas mediante un patrón extensible.
+    *   Definición de campos requeridos y configuraciones por defecto.
+    *   Lógica específica para procesar cada fila de datos.
 
-> Puedes cambiar nombres de columnas en `CONFIG.HEADERS`.
+3.  **`Main.gs` (El Punto de Entrada):** Gestiona la interfaz y las acciones.
+    *   Menú desplegable personalizado: Enviar, Prueba, Vista Previa, Borradores.
+    *   Carga automática de configuración desde la hoja "Config".
+    *   Orquestación de envíos masivos y creación de borradores.
 
-## Placeholders disponibles
-- `{{nombre}}`
-- `{{codigo}}`
-- `{{tipo}}`
-- `{{correo}}`
+## 📋 Plantillas Disponibles
 
-## Instrucciones rápidas de uso
-1. Crea una Google Sheet con los encabezados indicados.
-2. Abre [script.google.com](https://script.google.com/) y crea un **proyecto nuevo**.
-3. Crea los archivos:
-   - `Code.gs` → pega el contenido de este repositorio.
-   - `appsscript.json` → pega el manifiesto (debes activar vista del manifiesto desde la rueda dentada).
-4. En `Code.gs`, configura:
-   - `CONFIG.SHEET_ID` con el ID de tu Sheet.
-   - `CONFIG.SHEET_NAME` si usas otra pestaña.
-   - Si quieres, ajusta plantillas, límites y opciones.
-5. Da clic en **Ejecutar** por primera vez para otorgar permisos.
-6. Flujo sugerido:
-   - Ejecuta `generarCodigosFaltantes()` si hay celdas `codigo` vacías.
-   - Ejecuta `vistaPreviaPrimeraPendiente()` para revisar la plantilla ya renderizada.
-   - Opcional: ejecuta `setDryRun(true)` para simular.
-   - Ejecuta `enviarCodigos()` para enviar y marcar enviados.
+| ID | Nombre | Propósito |
+| :--- | :--- | :--- |
+| `certificate` | Envío de Certificados | Entrega de archivos PDF compartidos vía Drive. |
+| `confirmation` | Confirmación de Apertura | Información de inicio de cursos y códigos de descuento. |
+| `payment_reminder` | Recordatorio de Pago | Avisos urgentes con bandas de alerta roja. |
+| `placement_test` | Placement Test | Entrega de credenciales y links para plataformas externas. |
+| `code_delivery` | Envío de Códigos | Distribución segura de códigos de acceso (libros/tests). |
+| `report_delivery` | Entrega de Informes | Reportes de evaluación con búsqueda en directorio docente. |
+| `survey` | Encuesta de Percepción | Invitación a completar encuestas institucionales. |
 
-## Personalización de plantillas
-- Asunto por defecto: `Entrega de código {{tipo}}`
-- Cuerpo HTML por defecto: ver `CONFIG.DEFAULT_BODY_HTML`
-- Cuerpo texto por defecto: ver `CONFIG.DEFAULT_BODY_TEXT`
-- Puedes sobreescribir por fila usando las columnas `asunto_opcional` y `cuerpo_opcional`.
+## 🛠️ Guías Rápidas
 
-## Reenvíos y límites
-- Por defecto no reenvía si `enviado` ya es TRUE.
-- Para reenviar, ejecuta `setForceResend(true)` antes de `enviarCodigos()`.
-- `BATCH_LIMIT` controla cuántos correos por corrida.
-- `SLEEP_MS_EVERY` + `SLEEP_MS` ayuda a respetar cuotas.
+*   **[Guía de Despliegue](./docs/DEPLOYMENT.md):** Cómo instalar este sistema en una nueva hoja de cálculo.
+*   **[Guía de Creación de Plantillas](./docs/CREATING_TEMPLATES.md):** Instrucciones técnicas para desarrolladores que deseen añadir nuevos tipos de correo.
 
-## Errores comunes
-- **ID de hoja mal pegado**: revisa `CONFIG.SHEET_ID`.
-- **Encabezados no coinciden**: ajusta `CONFIG.HEADERS` o renombra columnas.
-- **Correo inválido**: la fila se registra como `SKIP` en `Logs`.
-
-## Publicación en GitHub
-1. Crea un repositorio nuevo.
-2. Sube `Code.gs`, `appsscript.json` y este `README.md`.
-3. Opcional: añade licencia MIT.
-4. Comparte el enlace en la documentación interna del Centro.
-
-## Licencia
-MIT
+---
+**PUCV - Centro de Idiomas**
+*Desarrollado para la excelencia institucional.*
