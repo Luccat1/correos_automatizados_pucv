@@ -341,9 +341,141 @@ const codeDeliveryTemplate = {
   }
 };
 
+/**
+ * Report Delivery Template
+ * Complex template with cross-sheet lookup and alias sending.
+ */
+const reportDeliveryTemplate = {
+  id: 'report_delivery',
+  name: 'Entrega de Informes',
+  requiredHeaders: [], // Special case: uses fixed column indexes from Informe script
+  senderName: 'Unidad de Evaluación Docente CELE',
+  senderAlias: 'cele.dgai@pucv.cl',
+  statusColumn: 'Estado',
+  headerTitle: 'RESULTADOS EVALUACIÓN DOCENTE',
+  footerLines: ['Unidad de Evaluación Docente', 'Centro de Estudios y Enseñanza de Lenguas Extranjeras', 'PUCV'],
+
+  /**
+   * Special helper for professor lookup.
+   * @param {string} professorName
+   * @param {Array.<Array>} directoryRows
+   * @returns {Object|null}
+   */
+  directoryLookup: function(professorName, directoryRows) {
+    if (!professorName || !directoryRows) return null;
+    const searchName = professorName.toLowerCase().trim();
+    for (const dRow of directoryRows) {
+      const dName = String(dRow[0] || "").toLowerCase().trim();
+      if (dName === searchName) {
+        return {
+          email: String(dRow[1] || "").trim(),
+          cc: String(dRow[2] || "").trim()
+        };
+      }
+    }
+    return null;
+  },
+
+  processRow: function(row, headers, rowIndex, extraData) {
+    // Indexes based on Informe script (0-based)
+    // COL_LOG_PROFESSOR: 1, COL_LOG_COURSE: 2, COL_LOG_DOC_ID: 3, COL_LOG_URL: 4
+    const professorName = safeCell(row, 1);
+    const course = safeCell(row, 2);
+    const docId = safeCell(row, 3);
+    const reportUrl = safeCell(row, 4);
+
+    if (!professorName || !docId) return null;
+
+    // Lookup email in directory (passed via extraData)
+    const directoryData = extraData ? extraData.directoryRows : null;
+    const lookup = this.directoryLookup(professorName, directoryData);
+    
+    if (!lookup || !lookup.email) {
+      console.warn(`No se encontró correo para el profesor: ${professorName}`);
+      return null;
+    }
+
+    // Share report
+    shareFileAsViewer(docId, lookup.email);
+
+    return {
+      to: lookup.email,
+      cc: lookup.cc,
+      professorName,
+      course,
+      reportUrl,
+      firstName: extractFirstName(professorName)
+    };
+  },
+
+  buildHtml: function(data) {
+    let content = `<p>Estimado(a) docente <strong>${data.professorName}</strong>,</p>`;
+    content += `<p>Junto con saludarte cordialmente, la Unidad de Evaluación Docente hace entrega de los resultados de la encuesta de percepción estudiantil para el siguiente curso:</p>`;
+    
+    content += buildInfoBox(`<strong>Curso:</strong> ${data.course}`);
+
+    content += `<p>Puedes acceder al informe detallado haciendo clic en el siguiente botón:</p>`;
+    content += buildButton("Ver Informe de Evaluación", data.reportUrl);
+
+    content += `<p>Este informe es confidencial y tiene como objetivo apoyar la mejora continua de los procesos de enseñanza y aprendizaje.</p>`;
+    content += `<p>Atentamente,<br>Unidad de Evaluación Docente CELE</p>`;
+
+    return content;
+  }
+};
+
+/**
+ * Survey Template
+ * Student perception survey delivery with certificate warning.
+ */
+const surveyTemplate = {
+  id: 'survey',
+  name: 'Encuesta de Percepción',
+  requiredHeaders: ['nombre', 'correo'],
+  senderName: 'PUCV',
+  statusColumn: 'Estado Encuesta',
+  headerTitle: 'ENCUESTA DE PERCEPCIÓN',
+  footerLines: ['Pontificia Universidad Católica de Valparaíso'],
+  
+  defaults: {
+    surveyUrl: "https://survey.pucv.cl/example",
+    programName: "tu curso actual"
+  },
+
+  processRow: function(row, headers, rowIndex) {
+    const nombre = requiredCell(row, headers['nombre'], 'Nombre', rowIndex);
+    const correo = requiredCell(row, headers['correo'], 'Correo', rowIndex);
+
+    return {
+      nombre, correo,
+      firstName: extractFirstName(nombre)
+    };
+  },
+
+  buildHtml: function(data) {
+    const url = data.surveyUrl || this.defaults.surveyUrl;
+    const program = data.programName || this.defaults.programName;
+
+    let content = `<p>Estimado(a) <strong>${data.firstName}</strong>,</p>`;
+    content += `<p>Para nosotros es fundamental conocer tu opinión sobre el desarrollo y calidad de <strong>${program}</strong> que estás cursando.</p>`;
+    content += `<p>Te invitamos a completar la siguiente encuesta de percepción, la cual no te tomará más de 5 minutos:</p>`;
+    
+    content += buildButton("Completar Encuesta", url);
+
+    content += buildWarningBox(`<strong>Nota importante:</strong> Te recordamos que la completación de esta encuesta es un requisito para la gestión y posterior envío de tus certificados de aprobación.`);
+
+    content += `<p>Agradecemos de antemano tu tiempo y colaboración.</p>`;
+    content += `<p>Atentamente,<br>Dirección General de Asuntos Internacionales PUCV</p>`;
+
+    return content;
+  }
+};
+
 // Register the templates
 registerTemplate(certificateTemplate);
 registerTemplate(confirmationTemplate);
 registerTemplate(paymentReminderTemplate);
 registerTemplate(placementTestTemplate);
 registerTemplate(codeDeliveryTemplate);
+registerTemplate(reportDeliveryTemplate);
+registerTemplate(surveyTemplate);
