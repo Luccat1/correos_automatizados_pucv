@@ -82,36 +82,235 @@ function _getSelectedTemplate() {
   return { template, config };
 }
 
-// --- Menu Handler Stubs ---
-// (Implemented in Plan 3.2)
+// --- Menu Handlers ---
 
-function menuSendEmails() {
-  showAlert('En Desarrollo', 'Esta función requiere la ejecución del Plan 3.2.');
-}
-
+/**
+ * Sends test email to the current user.
+ */
 function menuSendTest() {
-  showAlert('En Desarrollo', 'Esta función requiere la ejecución del Plan 3.2.');
+  const resolved = _getSelectedTemplate();
+  if (!resolved) return;
+
+  const { template, config } = resolved;
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getActiveSheet();
+  const headers = mapHeaders(sheet);
+  
+  // Get first data row (row 2)
+  const dataRange = sheet.getRange(2, 1, 1, sheet.getLastColumn());
+  const row = dataRange.getValues()[0];
+
+  try {
+    const rowData = template.processRow(row, headers, 2);
+    if (!rowData) {
+      showAlert('Error', 'No se pudo procesar la primera fila de datos.');
+      return;
+    }
+
+    // Prepare HTML
+    const innerHtml = template.buildHtml(rowData);
+    const isObject = typeof innerHtml === 'object';
+    const body = isObject ? innerHtml.content : innerHtml;
+    const alertBand = isObject ? innerHtml.alertBand : null;
+
+    const fullHtml = buildEmailLayout(body, {
+      title: template.headerTitle,
+      footerLines: template.footerLines,
+      alertBand: alertBand
+    });
+
+    const testEmail = Session.getActiveUser().getEmail();
+    sendEmail(testEmail, `[PRUEBA] ${template.headerTitle}`, fullHtml, {
+      senderName: config.senderName || template.senderName,
+      senderAlias: config.senderAlias || template.senderAlias
+    });
+
+    showAlert('Prueba Enviada', `Se ha enviado un correo de prueba a ${testEmail}`);
+  } catch (e) {
+    showAlert('Error en Prueba', e.message);
+  }
 }
 
+/**
+ * Shows a preview of the email in a modal dialog.
+ */
 function menuPreview() {
-  showAlert('En Desarrollo', 'Esta función requiere la ejecución del Plan 3.2.');
+  const resolved = _getSelectedTemplate();
+  if (!resolved) return;
+
+  const { template, config } = resolved;
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getActiveSheet();
+  const headers = mapHeaders(sheet);
+  
+  const dataRange = sheet.getRange(2, 1, 1, sheet.getLastColumn());
+  const row = dataRange.getValues()[0];
+
+  try {
+    const rowData = template.processRow(row, headers, 2);
+    if (!rowData) {
+      showAlert('Error', 'No se pudo procesar la primera fila de datos.');
+      return;
+    }
+
+    const innerHtml = template.buildHtml(rowData);
+    const isObject = typeof innerHtml === 'object';
+    const body = isObject ? innerHtml.content : innerHtml;
+    const alertBand = isObject ? innerHtml.alertBand : null;
+
+    const fullHtml = buildEmailLayout(body, {
+      title: template.headerTitle,
+      footerLines: template.footerLines,
+      alertBand: alertBand
+    });
+
+    const htmlOutput = HtmlService.createHtmlOutput(fullHtml)
+        .setWidth(800)
+        .setHeight(600)
+        .setTitle(`Vista Previa: ${template.name}`);
+    
+    SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Vista Previa de Correo');
+  } catch (e) {
+    showAlert('Error en Vista Previa', e.message);
+  }
 }
 
+/**
+ * Triggers mass sending of emails.
+ */
+function menuSendEmails() {
+  _executeBatch(false);
+}
+
+/**
+ * Triggers mass creation of drafts.
+ */
 function menuCreateDrafts() {
-  showAlert('En Desarrollo', 'Esta función requiere la ejecución del Plan 3.2.');
+  _executeBatch(true);
 }
 
+/**
+ * Shared execution logic for sending and drafting.
+ * @param {boolean} asDraft
+ * @private
+ */
+function _executeBatch(asDraft) {
+  const resolved = _getSelectedTemplate();
+  if (!resolved) return;
+
+  const { template, config } = resolved;
+  const sheet = SpreadsheetApp.getActiveSheet();
+  const headers = mapHeaders(sheet);
+
+  // Validate required headers
+  const missing = template.requiredHeaders.filter(h => headers[h] === undefined);
+  if (missing.length > 0) {
+    showAlert('Cabeceras Faltantes', `Faltan las siguientes columnas requeridas: ${missing.join(', ')}`);
+    return;
+  }
+
+  // Confirmation
+  const actionName = asDraft ? 'crear borradores' : 'enviar correos masivos';
+  if (!confirmAction(`¿Está seguro que desea ${actionName} usando la plantilla "${template.name}"?`)) {
+    return;
+  }
+
+  // Pre-load extra data for templates that need it (e.g. report_delivery)
+  const extraData = {};
+  if (template.id === 'report_delivery') {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const dirSheet = ss.getSheets().find(s => s.getName().toLowerCase() === 'directorio');
+    if (dirSheet) {
+      extraData.directoryRows = dirSheet.getDataRange().getValues();
+    }
+  }
+
+  const statusCol = ensureColumn(sheet, template.statusColumn);
+  const dataRange = sheet.getDataRange();
+  const values = dataRange.getValues();
+  const rows = values.slice(1); // Skip header
+
+  const processFn = (row, i) => {
+    const rowIndex = i + 2;
+    const currentStatus = String(row[statusCol - 1] || '');
+    
+    // Skip if already sent/drafted
+    if (currentStatus.toLowerCase().includes('enviado') || currentStatus.toLowerCase().includes('borrador')) {
+      return null;
+    }
+
+    try {
+      const data = template.processRow(row, headers, rowIndex, extraData);
+      if (!data) return null;
+
+      const innerHtml = template.buildHtml(data);
+      const isObject = typeof innerHtml === 'object';
+      const body = isObject ? innerHtml.content : innerHtml;
+      const alertBand = isObject ? innerHtml.alertBand : null;
+
+      const fullHtml = buildEmailLayout(body, {
+        title: template.headerTitle,
+        footerLines: template.footerLines,
+        alertBand: alertBand
+      });
+
+      // Special overrides from processRow (e.g. report_delivery)
+      const recipient = data.to || data.correo;
+      const cc = data.cc || config.cc;
+      const bcc = data.bcc || config.bcc;
+
+      return {
+        to: recipient,
+        subject: template.headerTitle,
+        htmlBody: fullHtml,
+        cc: cc,
+        bcc: bcc
+      };
+    } catch (e) {
+      console.error(`Error en fila ${rowIndex}: ${e.message}`);
+      return null;
+    }
+  };
+
+  const options = {
+    senderName: config.senderName || template.senderName,
+    senderAlias: config.senderAlias || template.senderAlias,
+    asDraft: asDraft,
+    sleepEvery: 20,
+    sleepMs: 1000
+  };
+
+  const results = sendBatch(rows, processFn, options);
+
+  // Update statuses
+  const statusValues = results.statuses.map(s => [s]);
+  batchUpdateColumn(sheet, statusCol, 2, statusValues);
+
+  showResult(results);
+}
+
+/**
+ * Shows the current active configuration.
+ */
 function menuShowConfig() {
   const resolved = _getSelectedTemplate();
   if (!resolved) return;
 
   const { template, config } = resolved;
+  const extras = Object.entries(config.extras).map(([k, v]) => `- ${k}: ${v}`).join('\n');
+  
   let msg = `Plantilla: ${template.name} (${template.id})\n`;
+  msg += `Estado Col: ${template.statusColumn}\n\n`;
   msg += `Remitente: ${config.senderName || template.senderName || 'Default'}\n`;
   if (config.senderAlias) msg += `Alias: ${config.senderAlias}\n`;
   if (config.cc) msg += `CC: ${config.cc}\n`;
   if (config.bcc) msg += `BCC: ${config.bcc}\n`;
-  msg += `\nCabeceras requeridas:\n- ${template.requiredHeaders.join('\n- ')}`;
+  
+  if (extras) {
+    msg += `\nConfiguración Adicional:\n${extras}\n`;
+  }
+  
+  msg += `\nCabeceras Requeridas:\n- ${template.requiredHeaders.join('\n- ')}`;
 
   showAlert('Configuración Actual', msg);
 }
