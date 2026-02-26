@@ -1,98 +1,89 @@
 ---
 phase: 1
 plan: 2
-wave: 1
+wave: 2
 ---
 
-# Plan 1.2: Email Engine & Drive Sharing
+# Plan 1.2: Template Selector Menu & Auto-Sheet Generation
 
 ## Objective
-Build the email sending engine and Drive sharing helper in `Core.gs`. This layer handles the actual GmailApp interactions: sending emails, creating drafts, managing CC/BCC, using sender aliases, and sharing Drive files. Templates will call these functions passing their rendered HTML and config.
+Add a menu option that lists all available templates and, upon selection, automatically creates the Config sheet and a data sheet with the correct headers for the chosen template. Also add auto-detection of the data sheet (by name from Config) so users don't need to be on the correct sheet tab.
 
 ## Context
-- .gsd/SPEC.md
-- .gsd/DECISIONS.md
-- src/Core.gs (from Plan 1.1)
-- Current scripts for reference: `ConfirmationEmail` (draft mode), `PlacementTest` (quota handling), `Informe` (alias support, BCC)
+- src/Templates.gs (`listTemplates()`, `getTemplate()`, template objects with `requiredHeaders` and `configKeys`)
+- src/Main.gs (`onOpen()`, `_getConfig()`, `_executeBatch()`)
+- src/Core.gs (UI helpers: `showAlert`, `buildMenu`)
 
 ## Tasks
 
 <task type="auto">
-  <name>Add email sending engine to Core.gs</name>
-  <files>src/Core.gs</files>
+  <name>Implement menuSetupTemplate with sheet generation</name>
+  <files>src/Main.gs</files>
   <action>
-    Add the following email functions to `src/Core.gs`:
+    1. **Add `menuSetupTemplate()` function** to Main.gs:
+       - Call `listTemplates()` to get available templates
+       - Show a dialog (using `SpreadsheetApp.getUi().prompt()` or an HTML sidebar) asking user to pick a template ID
+       - Once selected, call `_generateSheets(templateId)`
 
-    1. `sendEmail(options)` — Main email dispatch function. Accepts an options object:
+    2. **Add `_generateSheets(templateId)` private function**:
+       - Get the template object from registry
+       - Create or overwrite a sheet named "Config" with these rows:
+         - Row 1: `template_id` | `{templateId}`
+         - Row 2: `sender_name` | `{template.senderName}`
+         - Row 3: `data_sheet` | `Datos` (default data sheet name)
+         - Additional rows for each `configKeys` entry with empty values and a comment
+       - Create or overwrite a sheet named "Datos" with:
+         - Row 1: all `requiredHeaders` as column headers
+         - If template has a `statusColumn`, add it as the last header
+       - Format: bold header row, auto-resize columns
+       - Show confirmation alert
+
+    3. **Update `onOpen()` menu** to add the new option:
+       ```javascript
+       { label: '⚙️ Configurar Plantilla', functionName: 'menuSetupTemplate' }
        ```
-       {
-         to: string,           // recipient
-         subject: string,      // subject line
-         htmlBody: string,     // rendered HTML
-         plainBody: string,    // plain text fallback
-         cc: string,           // comma-separated CC list
-         bcc: string,          // comma-separated BCC list
-         senderName: string,   // display name
-         senderAlias: string,  // optional alias email (e.g. cele.dgai@pucv.cl)
-         asDraft: boolean      // if true, create draft instead of sending
-       }
-       ```
-       - If `asDraft` is true, uses `GmailApp.createDraft()`, otherwise `GmailApp.sendEmail()`
-       - If `senderAlias` is provided and exists in `GmailApp.getAliases()`, sets `from` option
-       - Returns object: `{ success: true, mode: 'sent'|'draft', timestamp: string }` or `{ success: false, error: string }`
-
-    2. `_getAliasesCache()` — Private function. Caches `GmailApp.getAliases()` result to avoid repeated API calls. Uses module-level variable.
-
-    3. `sendBatch(rows, processFn, options)` — Orchestrates batch sending:
-       - `rows`: array of data rows
-       - `processFn(row, index)`: callback that returns `{ to, subject, htmlBody, plainBody, cc, bcc }` or null (skip)
-       - `options`: `{ senderName, senderAlias, asDraft, statusColIndex, sheet, sleepEvery, sleepMs, batchLimit }`
-       - Iterates rows, calls processFn, calls sendEmail, builds status updates array
-       - Respects `sleepEvery` / `sleepMs` throttling
-       - Respects `batchLimit`
-       - On quota errors, stops immediately and saves progress
-       - Returns `{ processed: number, errors: number, statuses: string[][] }`
-
-    All functions with JSDoc. Error handling must be robust — never lose progress on batch errors.
+       Add it after the existing separator, before "Ver Configuración".
   </action>
   <verify>
-    Open `src/Core.gs` and verify:
-    - `sendEmail` function handles both send and draft modes
-    - `sendBatch` has throttling, batch limit, and quota error handling
-    - Alias caching is implemented
-    - Return values are structured objects
+    - `menuSetupTemplate` function exists in Main.gs
+    - `_generateSheets` function creates Config and Datos sheets
+    - Menu includes "Configurar Plantilla" option
   </verify>
-  <done>Email engine with sendEmail + sendBatch + alias caching added to Core.gs</done>
+  <done>Menu option generates Config + Datos sheets for any selected template</done>
 </task>
 
 <task type="auto">
-  <name>Add Drive sharing helper to Core.gs</name>
-  <files>src/Core.gs</files>
+  <name>Auto-detect data sheet from Config</name>
+  <files>src/Main.gs</files>
   <action>
-    Add the following Drive function to `src/Core.gs`:
+    1. **Update `_getConfig()`** to read `data_sheet` key from Config (store as `config.dataSheet`).
 
-    1. `shareFileAsViewer(fileId, email)` — Shares a Google Drive file with the given email as viewer.
-       - Uses `DriveApp.getFileById(fileId).addViewer(email)`
-       - Catches and logs errors (does not throw — non-blocking)
-       - Returns `{ success: boolean, error?: string }`
+    2. **Create `_getDataSheet()` helper function**:
+       ```javascript
+       function _getDataSheet(config) {
+         const ss = SpreadsheetApp.getActiveSpreadsheet();
+         const sheetName = config.dataSheet || 'Datos';
+         const sheet = ss.getSheetByName(sheetName);
+         if (!sheet) {
+           showAlert('Hoja No Encontrada', `No se encontró la hoja "${sheetName}". Use "⚙️ Configurar Plantilla" para generarla.`);
+           return null;
+         }
+         return sheet;
+       }
+       ```
 
-    2. `shareFileWithMultiple(fileId, emailList)` — Shares with an array of emails.
-       - Calls `shareFileAsViewer` for each
-       - Returns array of results
-
-    Both with JSDoc.
+    3. **Update all menu handlers** (`menuSendTest`, `menuPreview`, `menuSendEmails`, `menuCreateDrafts`) to use `_getDataSheet(config)` instead of `SpreadsheetApp.getActiveSheet()` for data rows. Keep `getActiveSheet()` only as fallback if `data_sheet` is not configured.
   </action>
   <verify>
-    Open `src/Core.gs` and verify:
-    - Both Drive sharing functions exist
-    - Errors are caught and logged, not thrown
-    - JSDoc is present
+    - `_getDataSheet` function exists
+    - `_executeBatch` uses `_getDataSheet` instead of `getActiveSheet`
+    - `menuSendTest` and `menuPreview` use `_getDataSheet`
   </verify>
-  <done>Drive sharing helpers added to Core.gs</done>
+  <done>Script finds data sheet by name from Config; user no longer needs to be on correct tab</done>
 </task>
 
 ## Success Criteria
-- [ ] `sendEmail()` supports both send and draft modes
-- [ ] `sendBatch()` handles throttling, limits, and quota errors
-- [ ] Drive sharing is non-blocking (catches errors)
-- [ ] Alias caching avoids repeated API calls
+- [ ] Menu has "⚙️ Configurar Plantilla" option
+- [ ] Selecting a template auto-generates Config + Datos sheets
+- [ ] Config includes `data_sheet` key pointing to the data sheet
+- [ ] All send/preview/test operations use the named data sheet, not active sheet
