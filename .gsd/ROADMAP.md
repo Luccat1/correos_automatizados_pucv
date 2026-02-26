@@ -5,13 +5,13 @@
 
 ## Must-Haves (from SPEC)
 
-- [ ] Core engine (`Core.gs`) with shared helpers
-- [ ] Shared institutional HTML base layout
-- [ ] Template registry pattern
-- [ ] All 7 templates implemented and tested
-- [ ] Custom Google Sheets menus
-- [ ] Clean, documented code
-- [ ] Deployment documentation
+- [x] Core engine (`Core.gs`) with shared helpers
+- [x] Shared institutional HTML base layout
+- [x] Template registry pattern
+- [x] All 7 templates implemented and tested
+- [x] Custom Google Sheets menus
+- [x] Clean, documented code
+- [x] Deployment documentation
 
 ## Phases
 
