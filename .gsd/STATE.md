@@ -1,22 +1,17 @@
 # GSD State
 
-## Milestone Complete 🎉
-
-The Unified Email System for PUCV is fully implemented, documented, and cleaned.
-
 ## Current Position
 
-- **Phase**: 5 (completed)
-- **Task**: Final cleanup and verification
-- **Status**: Milestone v1.0 PASSED Audit & Gap Closure
+- **Milestone**: v2.0 — Enhanced UX & Template Polish
+- **Phase**: Not started
+- **Status**: Milestone planned
 
-## Summary of Completion
+## Last Session Summary
 
-- **Core Engine**: `src/Core.gs` provides the robust foundation.
-- **Template Registry**: 7 institutional templates registered and styled.
-- **UI Integration**: Custom menu for Easy Send, Test, Preview, and Drafts.
-- **Documentation**: Professional guides for deployment and extending the system.
-- **Clean Repo**: All legacy files removed; `.gitignore` added.
+Milestone v1.0 completed and audited. Gap closure (Phase 5) executed successfully.
+Bug fixes applied to Main.gs/Core.gs API mismatches.
+5 TODOs accumulated and grouped into milestone v2.0 with 3 phases.
 
-## Final Note
-The project is ready for final dissemination.
+## Next Steps
+
+1. /plan 1 — Create Phase 1 execution plans (Template Config & Auto-Sheet)

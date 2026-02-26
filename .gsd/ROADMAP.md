@@ -1,72 +1,41 @@
 # ROADMAP.md
 
-> **Current Phase**: Not started
-> **Milestone**: v1.0 — Unified Email System
+> **Current Milestone**: v2.0 — Enhanced UX & Template Polish
+> **Goal**: Mejorar la experiencia de usuario del sistema de correos mediante una interfaz GUI rica, auto-configuración de hojas, detección inteligente de datos, y redacción institucional pulida.
 
-## Must-Haves (from SPEC)
+## Must-Haves
 
-- [x] Core engine (`Core.gs`) with shared helpers
-- [x] Shared institutional HTML base layout
-- [x] Template registry pattern
-- [x] All 7 templates implemented and tested
-- [x] Custom Google Sheets menus
-- [x] Clean, documented code
-- [x] Deployment documentation
+- [ ] Selector de plantillas desde el menú con auto-generación de hojas (Config + datos)
+- [ ] Auto-detección de hoja de datos (sin depender de hoja activa)
+- [ ] Diálogo HTML para personalizar envíos (nota adicional, asunto) antes de enviar
+- [ ] Fallback de saludo genérico cuando no hay nombre de destinatario
+- [ ] Redacción revisada: dos puntos en vocativos, sin redundancias, tono institucional PUCV
+- [ ] Parámetros configurables por template visibles en Config (ej: survey_url, extra_note)
 
 ## Phases
 
-### Phase 1: Core Engine
-**Status**: ✅ Complete
-**Objective**: Build `Core.gs` — the shared foundation that all templates depend on.
+### Phase 1: Template Config & Auto-Sheet Generation
+**Status**: ⬜ Not Started
+**Objective**: Añadir parámetros configurables a cada template (ej: `survey_url`, `extra_note`) y crear función que genere automáticamente las hojas Config + datos con cabeceras correctas al seleccionar un template.
 **Delivers**:
-- Sheet access helpers (open sheet, map headers, ensure status column, safe cell read)
-- Email sending engine (send or draft, with CC/BCC, alias support)
-- Drive sharing helper
-- Status tracking (batch writes)
-- HTML base layout function (institutional header, content slot, footer, button styles)
-- Menu builder (`onOpen` registration)
-- Quota checking
+- Cada template declara sus `configKeys` (claves configurables esperadas)
+- Función `menuSetupTemplate()` que muestra lista de templates y genera hojas
+- Templates leen parámetros desde Config en vez de usar solo defaults hardcodeados
+- Auto-detección de hoja de datos por nombre (configurado en Config como `data_sheet`)
 
-### Phase 2: Template System
-**Status**: ✅ Complete
-**Objective**: Build `Templates.gs` with the registry pattern and port all existing email types.
+### Phase 2: Enhanced Menu GUI
+**Status**: ⬜ Not Started
+**Objective**: Crear diálogos HTML para personalizar envíos y aprovechar la UI de Google Sheets.
 **Delivers**:
-- Template registry (register/get pattern)
-- Template definition structure: `{ id, name, config, buildHtml, buildPlainText }`
-- Port existing templates:
-  - `certificate` (merged from EnvioCertificados + CertificatesDiplomado)
-  - `confirmation` (from ConfirmationEmail)
-  - `payment_reminder` (from PaymentReminder)
-  - `placement_test` (from PlacementTest)
-  - `code_delivery` (from script_envio)
-  - `report_delivery` (from Informe)
-- New template: `survey`
+- Diálogo HTML pre-envío para editar: asunto, nota adicional, CC/BCC
+- Vista previa mejorada con diálogo modal completo
+- Menú reorganizado con submenús para Configuración y Herramientas
 
-### Phase 3: Main Entry Point & Menus
-**Status**: ✅ Complete
-**Objective**: Build `Main.gs` — the entry point that wires templates to menus and user actions.
+### Phase 3: Template Copy Revision
+**Status**: ⬜ Not Started
+**Objective**: Revisar la redacción de las 7 plantillas para calidad institucional.
 **Delivers**:
-- `onOpen()` with custom menu (Enviar, Prueba, Vista Previa)
-- Template selection logic (from sheet config or menu)
-- Test email function
-- Preview function
-- Draft creation function
-
-### Phase 4: Documentation & Deployment
-**Status**: ✅ Complete
-**Objective**: Write deployment guide and template creation guide.
-**Delivers**:
-- Updated `README.md` with new architecture overview
-- Template creation guide (how to add a new template)
-- Deployment instructions (copy files → bound script → configure)
-- Updated `AGENTS.md`
-- Updated `appsscript.json` manifest
-
-### Phase 5: Gap Closure & GitHub Prep
-**Status**: ✅ Complete
-**Objective**: Clean repository, remove legacy files, add .gitignore, and prepare for GitHub.
-**Gaps to Close:**
-- [ ] Delete ~9 legacy script files superseded by unified system
-- [ ] Remove GSD framework artifacts not part of the project (adapters/, scripts/, GSD docs)
-- [ ] Add `.gitignore` for clean version control
-- [ ] Fix ROADMAP must-have checkboxes (cosmetic)
+- Vocativos con dos puntos ("Estimado/a X:")
+- Fallback `extractFirstName()` → "Estimado/a estudiante" si no hay nombre
+- Eliminar redundancias (ej: "curso que estás cursando")
+- Tono alineado con el estilo de campañas IDIOMAS PUCV
