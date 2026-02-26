@@ -2,18 +2,18 @@
 
 ## Current Position
 
-- **Phase**: 2 (completed)
-- **Task**: Verified
-- **Status**: Ready for Phase 3 planning
+- **Phase**: 3 — Main Entry Point & Menus
+- **Task**: Planning complete
+- **Status**: Ready for execution
 
 ## Last Session Summary
 
-Phase 2 (Template System) executed successfully (2026-02-26).
-- 4 plans, 8 tasks completed.
-- `src/Templates.gs` implemented with Registry pattern.
-- 7 templates registered: `certificate`, `confirmation`, `payment_reminder`, `placement_test`, `code_delivery`, `report_delivery`, `survey`.
-- All must-haves verified (Evidence: `.gsd/phases/2/VERIFICATION.md`).
+Phase 2 (Template System) completed. Phase 3 planned (2026-02-26).
+- 2 plans in 1 wave
+- Plan 3.1: onOpen Menu & Template Selection
+- Plan 3.2: Menu Handler Functions (Send, Test, Preview, Draft, Config)
+- Total: 3 tasks, all auto-executable
 
 ## Next Steps
 
-1. /plan 3 — Entry point & Menus
+1. /execute 3
