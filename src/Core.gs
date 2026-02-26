@@ -467,6 +467,16 @@ function buildMenu(menuItems) {
   menuItems.forEach(item => {
     if (!item || item.separator) {
       menu.addSeparator();
+    } else if (item.children && Array.isArray(item.children)) {
+      const subMenu = ui.createMenu(item.label);
+      item.children.forEach(child => {
+        if (!child || child.separator) {
+          subMenu.addSeparator();
+        } else {
+          subMenu.addItem(child.label, child.functionName);
+        }
+      });
+      menu.addSubMenu(subMenu);
     } else {
       menu.addItem(item.label, item.functionName);
     }

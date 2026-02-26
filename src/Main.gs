@@ -11,13 +11,22 @@ function onOpen() {
   const menuItems = [
     { label: '⚙️ Configurar Plantilla', functionName: 'menuSetupTemplate' },
     null, // separator
-    { label: '📧 Enviar Correos', functionName: 'menuSendEmails' },
-    { label: '🧪 Enviar Prueba', functionName: 'menuSendTest' },
-    { label: '👁 Vista Previa', functionName: 'menuPreview' },
+    {
+      label: '📤 Envío',
+      children: [
+        { label: '📧 Enviar Correos', functionName: 'menuSendEmails' },
+        { label: '📝 Crear Borradores', functionName: 'menuCreateDrafts' },
+        { label: '🧪 Enviar Prueba', functionName: 'menuSendTest' }
+      ]
+    },
     null, // separator
-    { label: '📝 Crear Borradores', functionName: 'menuCreateDrafts' },
-    null, // separator
-    { label: 'ℹ️ Ver Configuración', functionName: 'menuShowConfig' }
+    {
+      label: '🔍 Herramientas',
+      children: [
+        { label: '👁 Vista Previa', functionName: 'menuPreview' },
+        { label: 'ℹ️ Ver Configuración', functionName: 'menuShowConfig' }
+      ]
+    }
   ];
 
   buildMenu(menuItems);
@@ -176,12 +185,73 @@ function menuPreview() {
       alertBand: alertBand
     });
 
-    const htmlOutput = HtmlService.createHtmlOutput(fullHtml)
-        .setWidth(800)
-        .setHeight(600)
+    const rowCount = sheet.getLastRow() - 1;
+    const previewHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
+          .preview-header { 
+            background-color: #24588d; 
+            color: white; 
+            padding: 15px 20px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+          }
+          .preview-header h3 { margin: 0; font-size: 16px; }
+          .preview-header p { margin: 5px 0 0; font-size: 12px; opacity: 0.9; }
+          .preview-container { padding: 20px; display: flex; justify-content: center; }
+          .email-wrapper { 
+            background: white; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            width: 100%; 
+            max-width: 600px; 
+          }
+          .preview-footer {
+            padding: 15px 20px;
+            text-align: right;
+            background: white;
+            border-top: 1px solid #eee;
+            position: sticky;
+            bottom: 0;
+          }
+          .btn-close {
+            background: #666;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="preview-header">
+          <h3>Vista Previa: ${template.name}</h3>
+          <p><strong>Asunto:</strong> ${template.headerTitle} | <strong>Destinatarios:</strong> ~${rowCount}</p>
+        </div>
+        <div class="preview-container">
+          <div class="email-wrapper">
+            ${fullHtml}
+          </div>
+        </div>
+        <div class="preview-footer">
+          <button class="btn-close" onclick="google.script.host.close()">Cerrar Vista Previa</button>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const htmlOutput = HtmlService.createHtmlOutput(previewHtml)
+        .setWidth(750)
+        .setHeight(650)
         .setTitle(`Vista Previa: ${template.name}`);
     
-    SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Vista Previa de Correo');
+    SpreadsheetApp.getUi().showModalDialog(htmlOutput, ' ');
   } catch (e) {
     showAlert('Error en Vista Previa', e.message);
   }
