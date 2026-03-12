@@ -412,34 +412,31 @@ function menuShowConfig() {
 }
 
 /**
- * Displays a template selector and generates sheets.
+ * Displays a visual template selector dialog.
  */
 function menuSetupTemplate() {
   const templates = listTemplates();
-  const items = templates.map(t => `${t.id} (${t.name})`);
-  
-  const ui = SpreadsheetApp.getUi();
-  const response = ui.prompt(
-    'Configurar Nueva Plantilla',
-    'Seleccione el ID de la plantilla:\n\n' + items.join('\n'),
-    ui.ButtonSet.OK_CANCEL
-  );
+  const html = HtmlService.createTemplateFromFile('TemplateSelector');
+  html.templates = templates;
 
-  if (response.getSelectedButton() !== ui.Button.OK) return;
-  
-  const input = response.getResponseText().trim().split(' ')[0];
-  const template = getTemplate(input);
+  const ui = html.evaluate()
+      .setWidth(500)
+      .setHeight(550)
+      .setTitle('Configurar Nueva Plantilla');
 
-  if (!template) {
-    showAlert('Error', `El ID "${input}" no es válido.`);
-    return;
-  }
-
-  _generateSheets(template.id);
+  SpreadsheetApp.getUi().showModalDialog(ui, ' ');
 }
 
 /**
- * Generates "Config" and "Datos" sheets for a template.
+ * Server-side callback to run sheet generation from dialog.
+ * @param {string} templateId
+ */
+function setupTemplateFromDialog(templateId) {
+  _generateSheets(templateId);
+}
+
+/**
+ * Generates "Config" and data sheets for a template.
  * @param {string} templateId
  * @private
  */
@@ -458,10 +455,12 @@ function _generateSheets(templateId) {
     configSheet.clear();
   }
 
+  const dataSheetName = `Datos_${templateId}`;
+
   const configRows = [
     ['Variable', 'Valor', 'Descripción'],
     ['template_id', template.id, 'ID de la plantilla a usar'],
-    ['data_sheet', 'Datos', 'Nombre de la hoja que contiene los datos'],
+    ['data_sheet', dataSheetName, 'Nombre de la hoja que contiene los datos'],
     ['sender_name', template.senderName || '', 'Nombre que aparecerá como remitente'],
     ['sender_alias', template.senderAlias || '', 'Email alias (debe estar configurado en Gmail)'],
     ['cc', '', 'Correos en CC (separados por coma)'],
@@ -480,11 +479,11 @@ function _generateSheets(templateId) {
   configSheet.autoResizeColumns(1, 3);
 
   // 2. Data Sheet
-  let dataSheet = ss.getSheetByName('Datos');
+  let dataSheet = ss.getSheetByName(dataSheetName);
   if (!dataSheet) {
-    dataSheet = ss.insertSheet('Datos');
+    dataSheet = ss.insertSheet(dataSheetName);
   } else {
-    const confirm = confirmAction('Hoja Existente', 'La hoja "Datos" ya existe. ¿Desea añadir las cabeceras requeridas?');
+    const confirm = confirmAction('Hoja Existente', `La hoja "${dataSheetName}" ya existe. ¿Desea añadir las cabeceras requeridas?`);
     if (!confirm) return;
   }
 
@@ -496,7 +495,8 @@ function _generateSheets(templateId) {
   }
   
   // Merge with existing headers if any
-  const existingHeaders = dataSheet.getLastColumn() > 0 ? dataSheet.getRange(1, 1, 1, dataSheet.getLastColumn()).getValues()[0] : [];
+  const lastCol = dataSheet.getLastColumn();
+  const existingHeaders = lastCol > 0 ? dataSheet.getRange(1, 1, 1, lastCol).getValues()[0] : [];
   const finalHeaders = [...existingHeaders];
   headers.forEach(h => {
     if (!finalHeaders.includes(h)) finalHeaders.push(h);
@@ -507,7 +507,7 @@ function _generateSheets(templateId) {
   dataSheet.setFrozenRows(1);
   dataSheet.autoResizeColumns(1, finalHeaders.length);
 
-  showAlert('Configuración Completada', `Se han preparado las hojas para la plantilla "${template.name}".\n\n1. Complete los valores en "Config".\n2. Llene los datos en "Datos".`);
+  showAlert('Configuración Completada', `Se han preparado las hojas para la plantilla "${template.name}".\n\n1. Complete los valores en "Config".\n2. Llene los datos en "${dataSheetName}".`);
 }
 
 /**
@@ -522,7 +522,12 @@ function _getDataSheet(name) {
   const sheet = ss.getSheetByName(sheetName);
 
   if (!sheet) {
-    showAlert('Hoja no encontrada', `No se encontró la hoja de datos "${sheetName}". Verifique la configuración.`);
+    const sheets = ss.getSheets().map(s => `"${s.getName()}"`).join(', ');
+    showAlert('Hoja no encontrada', 
+      `No se encontró la hoja de datos "${sheetName}".\n\n` +
+      `Verifique el nombre en la hoja "Config".\n` +
+      `Hojas disponibles en este documento: ${sheets}`
+    );
     return null;
   }
 
@@ -562,6 +567,7 @@ function _showSendDialog(asDraft) {
   html.cc = config.cc || '';
   html.bcc = config.bcc || '';
   html.rowCount = rowCount;
+  html.dataSheetName = sheet.getName();
   html.asDraft = asDraft;
 
   const ui = html.evaluate()

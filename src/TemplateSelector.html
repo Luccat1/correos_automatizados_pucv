@@ -1,0 +1,210 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      :root {
+        --primary: #24588d;
+        --secondary: #1d71b8;
+        --accent: #008cba;
+        --white: #ffffff;
+        --text: #333333;
+        --border: #e0e0e0;
+        --bg: #f8f8f8;
+        --success: #d9ead3;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+        color: var(--text);
+        background-color: var(--bg);
+      }
+      .container {
+        padding: 20px;
+        height: 380px;
+        overflow-y: auto;
+      }
+      .header {
+        background-color: var(--primary);
+        color: var(--white);
+        padding: 15px 20px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+      .header h2 {
+        margin: 0;
+        font-size: 18px;
+      }
+      .instruction {
+        font-size: 13px;
+        margin-bottom: 15px;
+        color: #666;
+      }
+      .template-card {
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 12px 15px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .template-card:hover {
+        border-color: var(--secondary);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      }
+      .template-card.selected {
+        border-color: var(--secondary);
+        background-color: #eef6ff;
+        box-shadow: 0 0 0 2px var(--secondary);
+      }
+      .template-card h3 {
+        margin: 0 0 5px 0;
+        font-size: 15px;
+        color: var(--primary);
+      }
+      .template-card .id {
+        font-family: monospace;
+        font-size: 11px;
+        color: #888;
+        background: #eee;
+        padding: 2px 5px;
+        border-radius: 3px;
+      }
+      .template-card .desc {
+        font-size: 12px;
+        margin-top: 5px;
+        color: #555;
+      }
+      .tags {
+        margin-top: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+      .tag {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 10px;
+        background: #f0f0f0;
+        color: #666;
+      }
+      .tag.required {
+        background: #fff2cc;
+        color: #bf9000;
+      }
+      .footer {
+        padding: 15px 20px;
+        background: white;
+        border-top: 1px solid var(--border);
+        text-align: right;
+      }
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+        margin-left: 10px;
+      }
+      .btn-primary {
+        background-color: var(--primary);
+        color: var(--white);
+      }
+      .btn-primary:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+      .btn-secondary {
+        background-color: #ccc;
+        color: var(--text);
+      }
+      .loader {
+        display: none;
+        text-align: center;
+        padding: 20px;
+        font-style: italic;
+        color: var(--primary);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h2>⚙️ Configurar Plantilla</h2>
+    </div>
+
+    <div id="loader" class="loader">Generando hojas de cálculo...</div>
+
+    <div id="mainContent">
+      <div class="container">
+        <div class="instruction">
+          Seleccione la plantilla que desea configurar en este documento. Se generarán las hojas "Config" y "Datos" con la estructura necesaria.
+        </div>
+
+        <div id="templateList">
+          <? templates.forEach(function(t) { ?>
+            <div class="template-card" onclick="selectTemplate('<?= t.id ?>', this)">
+              <h3><?= t.name ?> <span class="id"><?= t.id ?></span></h3>
+              <div class="desc"><?= t.description || 'Sin descripción disponible.' ?></div>
+              <div class="tags">
+                <? t.requiredHeaders.forEach(function(h) { ?>
+                  <span class="tag required"><?= h ?></span>
+                <? }); ?>
+                <? if (t.configKeys) { t.configKeys.forEach(function(k) { ?>
+                  <span class="tag"><?= k ?></span>
+                <? }); } ?>
+              </div>
+            </div>
+          <? }); ?>
+        </div>
+      </div>
+
+      <div class="footer">
+        <button class="btn btn-secondary" onclick="google.script.host.close()">Cancelar</button>
+        <button id="setupBtn" class="btn btn-primary" disabled onclick="runSetup()">Configurar</button>
+      </div>
+    </div>
+
+    <script>
+      let selectedId = null;
+
+      function selectTemplate(id, element) {
+        selectedId = id;
+        
+        // Remove selection from others
+        const cards = document.querySelectorAll('.template-card');
+        cards.forEach(c => c.classList.remove('selected'));
+        
+        // Add to this one
+        element.classList.add('selected');
+        
+        // Enable button
+        document.getElementById('setupBtn').disabled = false;
+      }
+
+      function runSetup() {
+        if (!selectedId) return;
+        
+        const content = document.getElementById('mainContent');
+        const loader = document.getElementById('loader');
+        
+        content.style.display = 'none';
+        loader.style.display = 'block';
+
+        google.script.run
+          .withSuccessHandler(function() {
+            google.script.host.close();
+          })
+          .withFailureHandler(function(err) {
+            alert('Error: ' + err);
+            content.style.display = 'block';
+            loader.style.display = 'none';
+          })
+          .setupTemplateFromDialog(selectedId);
+      }
+    </script>
+  </body>
+</html>
