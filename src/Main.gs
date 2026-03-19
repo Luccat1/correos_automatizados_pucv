@@ -339,7 +339,7 @@ function _executeBatch(asDraft, overrides) {
       const innerHtml = template.buildHtml(data);
       const isObject = typeof innerHtml === 'object';
       const body = isObject ? innerHtml.content : innerHtml;
-      const extraNote = isObject ? innerHtml.extraNote : null;
+      const extraNote = (overrides && overrides.extraNote) || (isObject ? innerHtml.extraNote : null);
 
       const fullHtml = buildEmailLayout({
         content: body,

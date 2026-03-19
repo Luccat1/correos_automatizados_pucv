@@ -171,6 +171,21 @@ function extractFirstName(fullName, fallback) {
 }
 
 /**
+ * Formats a Date object as a readable Spanish date string (e.g. "18 de marzo de 2026").
+ * If the value is not a Date, returns it unchanged as a string.
+ * @param {Date|string|*} value
+ * @returns {string}
+ */
+function formatDateEs(value) {
+  if (!(value instanceof Date)) return String(value);
+  const months = [
+    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+  ];
+  return `${value.getDate()} de ${months[value.getMonth()]} de ${value.getFullYear()}`;
+}
+
+/**
  * Extracts Google Drive file ID from various URL formats (/d/ID, id=ID).
  * @param {string} url
  * @returns {string|null}

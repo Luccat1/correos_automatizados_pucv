@@ -165,7 +165,7 @@ const confirmationTemplate = {
 
     return {
       nombre, correo, idioma, nivel, horario,
-      plazo: plazo || extras.payment_deadline || this.defaults.paymentDeadline,
+      plazo: (plazo ? formatDateEs(plazo) : null) || extras.payment_deadline || this.defaults.paymentDeadline,
       esContinuacion,
       firstName: extractFirstName(nombre, "estudiante"),
       cc,
