@@ -325,10 +325,10 @@ function _executeBatch(asDraft, overrides) {
 
   const processFn = (row, i) => {
     const rowIndex = i + 2;
-    const currentStatus = String(row[statusCol - 1] || '');
+    const currentStatus = String(row[statusCol - 1] || '').toLowerCase();
     
-    // Skip if already sent/drafted
-    if (currentStatus.toLowerCase().includes('enviado') || currentStatus.toLowerCase().includes('borrador')) {
+    // Skip if already sent/drafted or explicitly skipped (saltado)
+    if (currentStatus.includes('enviado') || currentStatus.includes('borrador') || currentStatus.includes('saltado')) {
       return null;
     }
 

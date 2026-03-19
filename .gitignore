@@ -1,11 +1,6 @@
 # GSD internal state (development methodology)
 .gsd/
 
-# Agent configuration
-.agent/
-.agents/
-.gemini/
-
 # OS files
 .DS_Store
 Thumbs.db

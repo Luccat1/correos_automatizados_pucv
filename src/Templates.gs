@@ -261,54 +261,68 @@ const paymentReminderTemplate = {
 const placementTestTemplate = {
   id: 'placement_test',
   name: 'Placement Test',
-  description: 'Entrega de credenciales para plataforma de test de nivel.',
-  requiredHeaders: ['nombre', 'correo', 'user id', 'password'],
-  configKeys: ['platform_url', 'deadline_text'],
-  senderName: 'Programa Idiomas PUCV',
+  description: 'Entrega de credenciales dinámicas para plataforma de test de nivel.',
+  requiredHeaders: ['nombre', 'correo'],
+  configKeys: ['platform_url', 'deadline_text', 'program_name', 'campos_credenciales'],
+  senderName: 'PUCV',
   statusColumn: 'Reminder Status',
-  headerTitle: 'PLACEMENT TEST - PROGRAMA IDIOMAS',
-  footerLines: ['Programa Idiomas PUCV', 'Dirección General de Asuntos Internacionales', 'PUCV'],
+  headerTitle: 'CREDENCIALES PLACEMENT TEST',
+  footerLines: ['Pontificia Universidad Católica de Valparaíso'],
   
   defaults: {
     platformUrl: "https://www.metritests.com/metrica/",
-    deadlineText: ""
+    deadlineText: "",
+    programName: "Programa Idiomas PUCV",
+    camposCredenciales: "User ID, Password"
   },
 
   processRow: function(row, headers, rowIndex, extraData) {
     const nombre = requiredCell(row, headers['nombre'], 'Nombre', rowIndex);
     const correo = requiredCell(row, headers['correo'], 'Correo', rowIndex);
-    const userId = requiredCell(row, headers['user id'], 'User ID', rowIndex);
-    const password = requiredCell(row, headers['password'], 'Password', rowIndex);
-    const institutionId = safeCell(row, headers['institutional id']);
 
     const extras = extraData ? extraData.configExtras : {};
+    
+    // Configurar qué campos vamos a extraer como credenciales (separados por coma)
+    const camposColsStr = extras.campos_credenciales || this.defaults.camposCredenciales;
+    const credCols = camposColsStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    
+    const credentialsList = [];
+    for (const col of credCols) {
+      const colKey = col.toLowerCase();
+      if (headers[colKey] !== undefined) {
+        const val = requiredCell(row, headers[colKey], col, rowIndex);
+        credentialsList.push({ label: col, value: val });
+      } else {
+        throw new Error(`Fila ${rowIndex}: En la hoja de datos no existe la columna requerida "${col}" (definida en campos_credenciales).`);
+      }
+    }
 
     return {
-      nombre, correo, userId, password, institutionId,
+      nombre, correo, credentialsList,
       firstName: extractFirstName(nombre, "estudiante"),
       platformUrl: extras.platform_url || this.defaults.platformUrl,
-      deadlineText: extras.deadline_text || this.defaults.deadlineText
+      deadlineText: extras.deadline_text || this.defaults.deadlineText,
+      programName: extras.program_name || this.defaults.programName
     };
   },
 
   buildHtml: function(data) {
     const greeting = data.nombre ? `Estimado/a <strong>${data.firstName}</strong>:` : "Estimado/a estudiante:";
     let content = `<p>${greeting}</p>`;
-    content += `<p>Te hacemos llegar las credenciales de acceso para rendir tu <strong>Placement Test</strong> del Programa de Idiomas PUCV.</p>`;
+    content += `<p>Te hacemos llegar las credenciales de acceso para rendir tu <strong>Placement Test</strong> de <strong>${data.programName}</strong>.</p>`;
     
-    let credentials = `<strong>Plataforma:</strong> <a href="${data.platformUrl}">${data.platformUrl}</a><br>`;
-    credentials += `<strong>User ID:</strong> ${data.userId}<br>`;
-    credentials += `<strong>Password:</strong> ${data.password}`;
-    if (data.institutionId) {
-      credentials += `<br><strong>Institution ID:</strong> ${data.institutionId}`;
-    }
+    let credentialsHtml = `<strong>Plataforma:</strong> <a href="${data.platformUrl}">${data.platformUrl}</a><br>`;
     
-    content += buildInfoBox(credentials);
+    data.credentialsList.forEach(cred => {
+      credentialsHtml += `<strong>${cred.label}:</strong> ${cred.value}<br>`;
+    });
+    
+    content += buildInfoBox(credentialsHtml);
 
     content += `<p><strong>Pasos para rendir el test:</strong></p>`;
     content += `<ol>
                   <li>Ingresa al enlace de la plataforma indicado arriba.</li>
-                  <li>Inicia sesión con tu User ID y Password.</li>
+                  <li>Inicia sesión con tus credenciales.</li>
                   <li>Sigue las instrucciones en pantalla para completar la evaluación.</li>
                 </ol>`;
 
@@ -319,7 +333,7 @@ const placementTestTemplate = {
     }
 
     content += `<p>Si tienes problemas técnicos durante el test, por favor contáctanos a la brevedad.</p>`;
-    content += `<p>Atentamente,<br>Programa Idiomas PUCV</p>`;
+    content += `<p>Atentamente,<br>${data.programName}</p>`;
 
     return content;
   }
