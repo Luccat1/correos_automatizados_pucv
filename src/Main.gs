@@ -62,7 +62,7 @@ function _getConfig() {
       case 'sender_alias': config.senderAlias = value; break;
       case 'cc': config.cc = value; break;
       case 'bcc': config.bcc = value; break;
-      default: config.extras[key] = value;
+      default: config.extras[key] = value instanceof Date ? formatDateEs(value) : value;
     }
   });
 
