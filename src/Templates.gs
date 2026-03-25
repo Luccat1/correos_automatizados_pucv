@@ -535,6 +535,97 @@ const surveyTemplate = {
   }
 };
 
+/**
+ * Class Start Announcement — Students
+ * Sends individual emails to each student confirming course details and professor contact.
+ */
+const classStartStudentsTemplate = {
+  id: 'class_start_students',
+  name: 'Inicio de Clases — Estudiantes',
+  description: 'Confirma a cada estudiante el inicio de su curso con sala y datos del profesor.',
+  requiredHeaders: ['nombre', 'correo', 'idioma', 'nivel', 'horario', 'sala', 'nombre_profesor', 'correo_profesor', 'es_profesor'],
+  statusColumn: 'Estado Inicio',
+  senderName: 'Programa Idiomas PUCV',
+  headerTitle: 'INICIO DE CLASES',
+  footerLines: ['Programa Idiomas PUCV', 'Dirección General de Asuntos Internacionales', 'PUCV'],
+
+  processRow: function(row, headers, rowIndex, extraData) {
+    const esProfesor = String(safeCell(row, headers['es_profesor']) || '0').trim() === '1';
+    if (esProfesor) return null;
+
+    const nombre          = requiredCell(row, headers['nombre'],          'Nombre',          rowIndex);
+    const correo          = requiredCell(row, headers['correo'],          'Correo',          rowIndex);
+    const idioma          = requiredCell(row, headers['idioma'],          'Idioma',          rowIndex);
+    const nivel           = requiredCell(row, headers['nivel'],           'Nivel',           rowIndex);
+    const horario         = requiredCell(row, headers['horario'],         'Horario',         rowIndex);
+    const sala            = requiredCell(row, headers['sala'],            'Sala',            rowIndex);
+    const nombreProfesor  = requiredCell(row, headers['nombre_profesor'], 'Nombre Profesor', rowIndex);
+    const correoProfesor  = requiredCell(row, headers['correo_profesor'], 'Correo Profesor', rowIndex);
+
+    return {
+      nombre, correo, idioma, nivel, horario, sala,
+      nombreProfesor, correoProfesor,
+      firstName: extractFirstName(nombre, 'estudiante')
+    };
+  },
+
+  buildHtml: function(data) {
+    const greeting = `Estimado/a <strong>${data.firstName}</strong>:`;
+    let content = `<p>${greeting}</p>`;
+    content += `<p>Te informamos que tu curso ya tiene fecha de inicio confirmada:</p>`;
+
+    const courseInfo = [
+      `<strong>Idioma:</strong> ${data.idioma}`,
+      `<strong>Nivel:</strong> ${data.nivel}`,
+      `<strong>Horario:</strong> ${data.horario}`,
+      `<strong>Sala:</strong> ${data.sala}`,
+      `<strong>Profesor/a:</strong> ${data.nombreProfesor}`,
+      `<strong>Contacto:</strong> <a href="mailto:${data.correoProfesor}" style="color:${COLORS.primary};">${data.correoProfesor}</a>`
+    ].join('<br>');
+    content += buildInfoBox(courseInfo);
+
+    content += `<p>Si tienes alguna consulta antes del inicio, puedes escribirle directamente a tu profesor/a.</p>`;
+    content += `<p>¡Te esperamos!</p>`;
+
+    return content;
+  }
+};
+
+/**
+ * Test: classStartStudentsTemplate.processRow
+ * Run from the GAS editor and check the Execution Log.
+ */
+function testClassStartStudentsProcessRow() {
+  const headers = {
+    nombre: 0, correo: 1, idioma: 2, nivel: 3,
+    horario: 4, sala: 5, nombre_profesor: 6, correo_profesor: 7, es_profesor: 8
+  };
+
+  // Test 1: student row is processed
+  const studentRow = ['Ana García', 'ana@test.com', 'Inglés', 'A2', 'L-J 8-9', 'E101', 'Prof. Smith', 'smith@pucv.cl', 0];
+  const r1 = classStartStudentsTemplate.processRow(studentRow, headers, 2, {});
+  if (r1 === null) throw new Error('FAIL test 1: student row should not return null');
+  if (r1.correo !== 'ana@test.com') throw new Error('FAIL test 1: wrong correo — got: ' + r1.correo);
+  if (r1.nombreProfesor !== 'Prof. Smith') throw new Error('FAIL test 1: wrong nombreProfesor — got: ' + r1.nombreProfesor);
+  Logger.log('PASS test 1: student row processed correctly');
+
+  // Test 2: professor row (number 1) is skipped
+  const profRow = ['Prof. Smith', 'smith@pucv.cl', 'Inglés', 'A2', 'L-J 8-9', 'E101', 'Prof. Smith', 'smith@pucv.cl', 1];
+  if (classStartStudentsTemplate.processRow(profRow, headers, 3, {}) !== null) {
+    throw new Error('FAIL test 2: professor row should return null');
+  }
+  Logger.log('PASS test 2: professor row (number 1) skipped');
+
+  // Test 3: professor row (string "1") is also skipped — GAS can return strings from Text-formatted cells
+  const profRowStr = ['Prof. Smith', 'smith@pucv.cl', 'Inglés', 'A2', 'L-J 8-9', 'E101', 'Prof. Smith', 'smith@pucv.cl', '1'];
+  if (classStartStudentsTemplate.processRow(profRowStr, headers, 4, {}) !== null) {
+    throw new Error('FAIL test 3: professor row with string "1" should return null');
+  }
+  Logger.log('PASS test 3: professor row (string "1") skipped');
+
+  Logger.log('ALL TESTS PASSED: testClassStartStudentsProcessRow');
+}
+
 // Register the templates
 registerTemplate(certificateTemplate);
 registerTemplate(confirmationTemplate);
@@ -543,3 +634,4 @@ registerTemplate(placementTestTemplate);
 registerTemplate(codeDeliveryTemplate);
 registerTemplate(reportDeliveryTemplate);
 registerTemplate(surveyTemplate);
+registerTemplate(classStartStudentsTemplate);
