@@ -553,6 +553,8 @@ const classStartStudentsTemplate = {
     const esProfesor = String(safeCell(row, headers['es_profesor']) || '0').trim() === '1';
     if (esProfesor) return null;
 
+    // nombre is required: a blank name is a data-quality error. firstName falls back to the
+    // 'estudiante' literal, but we want operators to fix their data rather than silently skip.
     const nombre          = requiredCell(row, headers['nombre'],          'Nombre',          rowIndex);
     const correo          = requiredCell(row, headers['correo'],          'Correo',          rowIndex);
     const idioma          = requiredCell(row, headers['idioma'],          'Idioma',          rowIndex);
@@ -607,7 +609,8 @@ function testClassStartStudentsProcessRow() {
   if (r1 === null) throw new Error('FAIL test 1: student row should not return null');
   if (r1.correo !== 'ana@test.com') throw new Error('FAIL test 1: wrong correo — got: ' + r1.correo);
   if (r1.nombreProfesor !== 'Prof. Smith') throw new Error('FAIL test 1: wrong nombreProfesor — got: ' + r1.nombreProfesor);
-  Logger.log('PASS test 1: student row processed correctly');
+  if (!r1.firstName) throw new Error('FAIL test 1: firstName should not be empty — got: ' + r1.firstName);
+  Logger.log('PASS test 1: student row processed correctly (correo, nombreProfesor, firstName verified)');
 
   // Test 2: professor row (number 1) is skipped
   const profRow = ['Prof. Smith', 'smith@pucv.cl', 'Inglés', 'A2', 'L-J 8-9', 'E101', 'Prof. Smith', 'smith@pucv.cl', 1];
