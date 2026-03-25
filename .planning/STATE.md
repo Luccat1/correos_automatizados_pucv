@@ -47,7 +47,8 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None yet.
+1. **Añadir template anuncio inicio de clases con correos diferenciados** — `2026-03-25-anadir-template-anuncio-inicio-de-clases-con-correos-diferenciados.md`
+   Nuevo template `class_start_announcement` con correos distintos para estudiantes (confirmación de curso + datos del profesor) y para el profesor (datos del curso + lista de estudiantes). Envíos independientes por grupo.
 
 ### Blockers/Concerns
 
