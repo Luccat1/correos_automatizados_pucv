@@ -323,6 +323,11 @@ function _executeBatch(asDraft, overrides) {
   const values = dataRange.getValues();
   const rows = values.slice(1); // Skip header
 
+  // Invoke prepareExtraData hook if defined (for templates needing cross-row aggregation)
+  if (typeof template.prepareExtraData === 'function') {
+    template.prepareExtraData(rows, headers, extraData);
+  }
+
   const processFn = (row, i) => {
     const rowIndex = i + 2;
     const currentStatus = String(row[statusCol - 1] || '').toLowerCase();
