@@ -108,13 +108,24 @@ function menuSendTest() {
   if (!sheet) return;
 
   const headers = mapHeaders(sheet);
-  
-  // Get first data row (row 2)
-  const dataRange = sheet.getRange(2, 1, 1, sheet.getLastColumn());
-  const row = dataRange.getValues()[0];
+
+  // Validate required headers (same as _executeBatch)
+  const missingTest = (template.requiredHeaders || []).filter(h => headers[h] === undefined);
+  if (missingTest.length > 0) {
+    showAlert('Cabeceras Faltantes', `Faltan las siguientes columnas requeridas: ${missingTest.join(', ')}`);
+    return;
+  }
+
+  // Load all rows so prepareExtraData can aggregate cross-row data
+  const allValues = sheet.getDataRange().getValues();
+  const rows = allValues.slice(1);
+  const row = rows[0];
 
   try {
     const extraData = { configExtras: config.extras };
+    if (typeof template.prepareExtraData === 'function') {
+      template.prepareExtraData(rows, headers, extraData);
+    }
     const rowData = template.processRow(row, headers, 2, extraData);
     if (!rowData) {
       showAlert('Error', 'No se pudo procesar la primera fila de datos.');
@@ -161,12 +172,24 @@ function menuPreview() {
   if (!sheet) return;
 
   const headers = mapHeaders(sheet);
-  
-  const dataRange = sheet.getRange(2, 1, 1, sheet.getLastColumn());
-  const row = dataRange.getValues()[0];
+
+  // Validate required headers
+  const missingPreview = (template.requiredHeaders || []).filter(h => headers[h] === undefined);
+  if (missingPreview.length > 0) {
+    showAlert('Cabeceras Faltantes', `Faltan las siguientes columnas requeridas: ${missingPreview.join(', ')}`);
+    return;
+  }
+
+  // Load all rows so prepareExtraData can aggregate cross-row data
+  const allValues = sheet.getDataRange().getValues();
+  const rows = allValues.slice(1);
+  const row = rows[0];
 
   try {
     const extraData = { configExtras: config.extras };
+    if (typeof template.prepareExtraData === 'function') {
+      template.prepareExtraData(rows, headers, extraData);
+    }
     const rowData = template.processRow(row, headers, 2, extraData);
     if (!rowData) {
       showAlert('Error', 'No se pudo procesar la primera fila de datos.');
