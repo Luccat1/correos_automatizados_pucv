@@ -676,6 +676,7 @@ const classStartProfessorTemplate = {
       const idioma  = safeCell(row, headers['idioma'])  || '';
       const nivel   = safeCell(row, headers['nivel'])   || '';
       const horario = safeCell(row, headers['horario']) || '';
+      if (!idioma && !nivel && !horario) return; // skip blank trailing rows
       const key = _makeCourseKey(idioma, nivel, horario);
 
       if (!groups[key]) groups[key] = [];

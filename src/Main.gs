@@ -131,9 +131,14 @@ function menuSendTest() {
     if (typeof template.prepareExtraData === 'function') {
       template.prepareExtraData(rows, headers, extraData);
     }
-    const rowData = template.processRow(row, headers, 2, extraData);
+    // Scan for the first row the template accepts (some templates skip certain row types)
+    let rowData = null;
+    for (let idx = 0; idx < rows.length; idx++) {
+      rowData = template.processRow(rows[idx], headers, idx + 2, extraData);
+      if (rowData) break;
+    }
     if (!rowData) {
-      showAlert('Error', 'No se pudo procesar la primera fila de datos.');
+      showAlert('Sin Vista Previa', 'No se encontró ninguna fila procesable (todas las filas fueron saltadas por la plantilla).');
       return;
     }
 
@@ -200,9 +205,14 @@ function menuPreview() {
     if (typeof template.prepareExtraData === 'function') {
       template.prepareExtraData(rows, headers, extraData);
     }
-    const rowData = template.processRow(row, headers, 2, extraData);
+    // Scan for the first row the template accepts (some templates skip certain row types)
+    let rowData = null;
+    for (let idx = 0; idx < rows.length; idx++) {
+      rowData = template.processRow(rows[idx], headers, idx + 2, extraData);
+      if (rowData) break;
+    }
     if (!rowData) {
-      showAlert('Error', 'No se pudo procesar la primera fila de datos.');
+      showAlert('Sin Vista Previa', 'No se encontró ninguna fila procesable (todas las filas fueron saltadas por la plantilla).');
       return;
     }
 
