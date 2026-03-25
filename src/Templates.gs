@@ -629,6 +629,111 @@ function testClassStartStudentsProcessRow() {
   Logger.log('ALL TESTS PASSED: testClassStartStudentsProcessRow');
 }
 
+/**
+ * Builds a normalized composite key for course grouping.
+ * Lowercases and trims each component to prevent silent mismatches.
+ * @param {string} idioma
+ * @param {string} nivel
+ * @param {string} horario
+ * @returns {string}
+ */
+function _makeCourseKey(idioma, nivel, horario) {
+  return [idioma, nivel, horario]
+    .map(function(s) { return String(s || '').toLowerCase().trim(); })
+    .join('|');
+}
+
+/**
+ * Class Start Announcement — Professor
+ * Sends one email per professor per course combination with the enrolled student list.
+ */
+const classStartProfessorTemplate = {
+  id: 'class_start_professor',
+  name: 'Inicio de Clases — Profesores',
+  description: 'Notifica a cada profesor el inicio de su curso con la nómina de estudiantes inscritos.',
+  requiredHeaders: ['nombre', 'correo', 'idioma', 'nivel', 'horario', 'sala', 'nombre_profesor', 'correo_profesor', 'es_profesor'],
+  statusColumn: 'Estado Inicio Profesor',
+  senderName: 'Programa Idiomas PUCV',
+  headerTitle: 'INICIO DE CLASES',
+  footerLines: ['Programa Idiomas PUCV', 'Dirección General de Asuntos Internacionales', 'PUCV'],
+
+  /**
+   * Pre-aggregates student rows into extraData.courseGroups keyed by idioma|nivel|horario.
+   * Called once before row iteration by _executeBatch, menuSendTest, and menuPreview.
+   * @param {Array.<Array>} rows - All data rows (header already removed).
+   * @param {Object} headers - mapHeaders result.
+   * @param {Object} extraData - Mutated in-place.
+   */
+  prepareExtraData: function(rows, headers, extraData) {
+    const groups = {};
+    rows.forEach(function(row) {
+      const esProfesor = String(safeCell(row, headers['es_profesor']) || '0').trim() === '1';
+      if (esProfesor) return;
+
+      const idioma  = safeCell(row, headers['idioma'])  || '';
+      const nivel   = safeCell(row, headers['nivel'])   || '';
+      const horario = safeCell(row, headers['horario']) || '';
+      const key = _makeCourseKey(idioma, nivel, horario);
+
+      if (!groups[key]) groups[key] = [];
+      groups[key].push({
+        nombre: safeCell(row, headers['nombre']) || '',
+        correo: safeCell(row, headers['correo']) || ''
+      });
+    });
+    extraData.courseGroups = groups;
+  },
+
+  processRow: function(row, headers, rowIndex, extraData) {
+    const esProfesor = String(safeCell(row, headers['es_profesor']) || '0').trim() === '1';
+    if (!esProfesor) return null;
+
+    const nombre  = requiredCell(row, headers['nombre'],  'Nombre',  rowIndex);
+    const correo  = requiredCell(row, headers['correo'],  'Correo',  rowIndex);
+    const idioma  = requiredCell(row, headers['idioma'],  'Idioma',  rowIndex);
+    const nivel   = requiredCell(row, headers['nivel'],   'Nivel',   rowIndex);
+    const horario = requiredCell(row, headers['horario'], 'Horario', rowIndex);
+    const sala    = requiredCell(row, headers['sala'],    'Sala',    rowIndex);
+
+    const key = _makeCourseKey(idioma, nivel, horario);
+    const students = (extraData.courseGroups && extraData.courseGroups[key]) || [];
+
+    if (students.length === 0) return null; // No matching students — skip this professor row
+
+    return {
+      nombre, correo, idioma, nivel, horario, sala,
+      firstName: extractFirstName(nombre, 'profesor'),
+      students: students
+    };
+  },
+
+  buildHtml: function(data) {
+    let content = `<p>Estimado/a Prof. <strong>${data.firstName}</strong>:</p>`;
+    content += `<p>A continuación encontrará la información de su curso y la nómina de estudiantes inscritos:</p>`;
+
+    const courseInfo = [
+      `<strong>Idioma:</strong> ${data.idioma}`,
+      `<strong>Nivel:</strong> ${data.nivel}`,
+      `<strong>Horario:</strong> ${data.horario}`,
+      `<strong>Sala:</strong> ${data.sala}`
+    ].join('<br>');
+    content += buildInfoBox(courseInfo);
+
+    const count = data.students.length;
+    content += `<p><strong>Estudiantes inscritos (${count}):</strong></p>`;
+    const listItems = data.students
+      .map(function(s) {
+        return `<li style="margin-bottom:4px;">${s.nombre} — <a href="mailto:${s.correo}" style="color:${COLORS.primary};">${s.correo}</a></li>`;
+      })
+      .join('');
+    content += `<ul style="padding-left:20px; margin:0 0 16px;">${listItems}</ul>`;
+
+    content += `<p>Cualquier consulta sobre la gestión del curso puede responder directamente a este correo.</p>`;
+
+    return content;
+  }
+};
+
 // Register the templates
 registerTemplate(certificateTemplate);
 registerTemplate(confirmationTemplate);
@@ -638,3 +743,79 @@ registerTemplate(codeDeliveryTemplate);
 registerTemplate(reportDeliveryTemplate);
 registerTemplate(surveyTemplate);
 registerTemplate(classStartStudentsTemplate);
+registerTemplate(classStartProfessorTemplate);
+
+/**
+ * Tests for _makeCourseKey normalization.
+ */
+function testMakeCourseKey() {
+  const k1 = _makeCourseKey('Inglés', 'A2', 'L-J 8-9');
+  const k2 = _makeCourseKey(' Inglés ', ' A2 ', ' L-J 8-9 ');
+  const k3 = _makeCourseKey('INGLÉS', 'a2', 'l-j 8-9');
+  if (k1 !== k2) throw new Error('FAIL: spaces not normalized — k1: ' + k1 + ' k2: ' + k2);
+  if (k1 !== k3) throw new Error('FAIL: case not normalized — k1: ' + k1 + ' k3: ' + k3);
+  Logger.log('PASS: _makeCourseKey normalizes correctly — key: ' + k1);
+  Logger.log('ALL TESTS PASSED: testMakeCourseKey');
+}
+
+/**
+ * Tests for classStartProfessorTemplate.prepareExtraData and processRow.
+ */
+function testClassStartProfessorTemplate() {
+  const headers = {
+    nombre: 0, correo: 1, idioma: 2, nivel: 3,
+    horario: 4, sala: 5, nombre_profesor: 6, correo_profesor: 7, es_profesor: 8
+  };
+
+  const rows = [
+    ['Ana García',   'ana@test.com',   'Inglés', 'A2', 'L-J 8-9', 'E101', 'Prof. Smith', 'smith@pucv.cl', 0],
+    ['Bob Torres',   'bob@test.com',   'Inglés', 'A2', 'L-J 8-9', 'E101', 'Prof. Smith', 'smith@pucv.cl', 0],
+    ['Prof. Smith',  'smith@pucv.cl',  'Inglés', 'A2', 'L-J 8-9', 'E101', 'Prof. Smith', 'smith@pucv.cl', 1],
+    ['Carmen López', 'carmen@test.com','Alemán',  'B1', 'V 10-12', 'F202', 'Prof. Braun', 'braun@pucv.cl', 0],
+    ['Prof. Braun',  'braun@pucv.cl',  'Alemán',  'B1', 'V 10-12', 'F202', 'Prof. Braun', 'braun@pucv.cl', 1],
+  ];
+
+  const extraData = { configExtras: {} };
+  classStartProfessorTemplate.prepareExtraData(rows, headers, extraData);
+
+  // Test 1: courseGroups has two entries (one per course)
+  const groups = extraData.courseGroups;
+  const keys = Object.keys(groups);
+  if (keys.length !== 2) throw new Error('FAIL test 1: expected 2 course groups, got ' + keys.length);
+  Logger.log('PASS test 1: two course groups built');
+
+  // Test 2: Inglés/A2 group has 2 students
+  const englishKey = _makeCourseKey('Inglés', 'A2', 'L-J 8-9');
+  if (!groups[englishKey]) throw new Error('FAIL test 2: missing key ' + englishKey);
+  if (groups[englishKey].length !== 2) throw new Error('FAIL test 2: expected 2 students, got ' + groups[englishKey].length);
+  Logger.log('PASS test 2: Inglés A2 group has 2 students');
+
+  // Test 3: student rows return null for the professor template
+  if (classStartProfessorTemplate.processRow(rows[0], headers, 2, extraData) !== null) {
+    throw new Error('FAIL test 3: student row should return null');
+  }
+  Logger.log('PASS test 3: student row skipped by professor template');
+
+  // Test 4: professor row returns data with correct student list
+  const profData = classStartProfessorTemplate.processRow(rows[2], headers, 4, extraData);
+  if (profData === null) throw new Error('FAIL test 4: professor row should return data');
+  if (profData.students.length !== 2) throw new Error('FAIL test 4: expected 2 students, got ' + profData.students.length);
+  if (profData.idioma !== 'Inglés') throw new Error('FAIL test 4: wrong idioma — got: ' + profData.idioma);
+  Logger.log('PASS test 4: professor row returns data with 2-student list');
+
+  // Test 5: professor whose course key does not match any student rows returns null.
+  // Setup: two students for Inglés/A2, one professor for a completely different course.
+  // This proves the lookup is isolated by course key, not just the empty-map case.
+  const rowsIsolated = [
+    ['Ana García', 'ana@test.com', 'Inglés', 'A2', 'L-J 8-9', 'E101', 'Prof. Smith', 'smith@pucv.cl', 0],
+    ['Bob Torres', 'bob@test.com', 'Inglés', 'A2', 'L-J 8-9', 'E101', 'Prof. Smith', 'smith@pucv.cl', 0],
+    ['Prof. Solo',  'solo@pucv.cl', 'Japonés', 'N1', 'S 9-11', 'G303', 'Prof. Solo',  'solo@pucv.cl',  1],
+  ];
+  const extraDataIsolated = { configExtras: {} };
+  classStartProfessorTemplate.prepareExtraData(rowsIsolated, headers, extraDataIsolated);
+  const soloResult = classStartProfessorTemplate.processRow(rowsIsolated[2], headers, 4, extraDataIsolated);
+  if (soloResult !== null) throw new Error('FAIL test 5: professor with no matching students should return null');
+  Logger.log('PASS test 5: professor with no matching students returns null (key isolation verified)');
+
+  Logger.log('ALL TESTS PASSED: testClassStartProfessorTemplate');
+}
