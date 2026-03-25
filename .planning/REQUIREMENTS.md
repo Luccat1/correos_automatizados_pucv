@@ -1,6 +1,6 @@
 # Requirements — Correos Automatizados PUCV
 
-**Milestone:** v1.0 — Robustez, Observabilidad y Calidad Arquitectónica
+**Milestone:** v1.0 — Robustez, Observabilidad y Calidad Arquitectonica
 **Date:** 2026-03-25
 **Source:** README.md + research findings (FEATURES.md, ARCHITECTURE.md, PITFALLS.md)
 
@@ -10,7 +10,7 @@
 
 ### Robustness (Error Handling)
 
-- [ ] **ROBUST-01**: Operator can see the specific error reason in the status column when a row fails to process (e.g., "ERROR: correo inválido", not "SALTADO")
+- [ ] **ROBUST-01**: Operator can see the specific error reason in the status column when a row fails to process (e.g., "ERROR: correo invalido", not "SALTADO")
 - [ ] **ROBUST-02**: Operator is warned before sending if any recipient email addresses are syntactically invalid, and those rows are skipped with a clear error status
 - [ ] **ROBUST-03**: Operator can re-run a batch and only rows with ERROR status (or empty status) are processed; already-sent rows remain unchanged
 - [ ] **ROBUST-04**: Operator sees a quota forecast ("Cuota disponible: N correos") in the send dialog before committing to a batch
@@ -66,21 +66,19 @@ These are valuable but not required for this milestone:
 
 ## Traceability
 
-_Filled in by roadmapper after ROADMAP.md is created._
-
 | REQ-ID | Phase | Plan |
 |--------|-------|------|
-| ROBUST-01 | — | — |
-| ROBUST-02 | — | — |
-| ROBUST-03 | — | — |
-| ROBUST-04 | — | — |
-| ROBUST-05 | — | — |
-| ROBUST-06 | — | — |
-| LOG-01 | — | — |
-| LOG-02 | — | — |
-| ARCH-01 | — | — |
-| ARCH-02 | — | — |
-| ARCH-03 | — | — |
-| UX-01 | — | — |
-| UX-02 | — | — |
-| TOOL-01 | — | — |
+| ROBUST-01 | Phase 1 | TBD |
+| ROBUST-02 | Phase 1 | TBD |
+| ROBUST-03 | Phase 2 | TBD |
+| ROBUST-04 | Phase 2 | TBD |
+| ROBUST-05 | Phase 2 | TBD |
+| ROBUST-06 | Phase 1 | TBD |
+| LOG-01 | Phase 2 | TBD |
+| LOG-02 | Phase 2 | TBD |
+| ARCH-01 | Phase 3 | TBD |
+| ARCH-02 | Phase 1 | TBD |
+| ARCH-03 | Phase 3 | TBD |
+| UX-01 | Phase 2 | TBD |
+| UX-02 | Phase 2 | TBD |
+| TOOL-01 | Phase 3 | TBD |
