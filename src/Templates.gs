@@ -652,6 +652,9 @@ const classStartProfessorTemplate = {
   name: 'Inicio de Clases — Profesores',
   description: 'Notifica a cada profesor el inicio de su curso con la nómina de estudiantes inscritos.',
   requiredHeaders: ['nombre', 'correo', 'idioma', 'nivel', 'horario', 'sala', 'nombre_profesor', 'correo_profesor', 'es_profesor'],
+  // nombre_profesor and correo_profesor are required here to enforce that the shared data sheet
+  // is correctly set up for the students template. The professor template does not read these columns
+  // from the professor row (professors use nombre/correo directly).
   statusColumn: 'Estado Inicio Profesor',
   senderName: 'Programa Idiomas PUCV',
   headerTitle: 'INICIO DE CLASES',
@@ -795,6 +798,12 @@ function testClassStartProfessorTemplate() {
     throw new Error('FAIL test 3: student row should return null');
   }
   Logger.log('PASS test 3: student row skipped by professor template');
+
+  // Test 3b: professor row with string "1" is also processed (not skipped) by the professor template
+  const profRowStr = ['Prof. Smith', 'smith@pucv.cl', 'Inglés', 'A2', 'L-J 8-9', 'E101', 'Prof. Smith', 'smith@pucv.cl', '1'];
+  const profDataStr = classStartProfessorTemplate.processRow(profRowStr, headers, 5, extraData);
+  if (profDataStr === null) throw new Error('FAIL test 3b: professor row with string "1" should NOT return null');
+  Logger.log('PASS test 3b: professor row with string "1" is correctly identified as professor');
 
   // Test 4: professor row returns data with correct student list
   const profData = classStartProfessorTemplate.processRow(rows[2], headers, 4, extraData);
