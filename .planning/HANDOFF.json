@@ -1,0 +1,36 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-03-25T22:21:26.828Z",
+  "phase": "none",
+  "phase_name": "class_start_announcement templates",
+  "phase_dir": "none",
+  "plan": 1,
+  "task": 5,
+  "total_tasks": 5,
+  "status": "paused",
+  "completed_tasks": [
+    {"id": 1, "name": "prepareExtraData hook in _executeBatch", "status": "done", "commit": "ccaeaaf"},
+    {"id": 2, "name": "hook in menuSendTest and menuPreview", "status": "done", "commit": "4bfebf9"},
+    {"id": 3, "name": "class_start_students template", "status": "done", "commit": "9cbf206"},
+    {"id": 4, "name": "class_start_professor template", "status": "done", "commit": "122f68a"},
+    {"id": 5, "name": "fecha_inicio field added to both templates", "status": "done", "commit": "909da7b"}
+  ],
+  "remaining_tasks": [
+    {"id": 6, "name": "Smoke test in GAS editor", "status": "not_started"}
+  ],
+  "blockers": [],
+  "human_actions_pending": [
+    {"action": "Copy src/Templates.gs and src/Main.gs to GAS editor", "context": "No auto-deploy — manual copy-paste required", "blocking": true},
+    {"action": "Run testClassStartStudentsProcessRow, testMakeCourseKey, testClassStartProfessorTemplate in GAS editor", "context": "Verify all tests pass in Execution Log", "blocking": false},
+    {"action": "Smoke test: populate data sheet and run Vista Previa + Enviar Prueba for both templates", "context": "Verify student email and professor email render correctly", "blocking": false}
+  ],
+  "decisions": [
+    {"decision": "Two separate template IDs sharing one data sheet", "rationale": "Independent sends for students vs professors", "phase": "design"},
+    {"decision": "prepareExtraData hook (generic) over per-template if blocks", "rationale": "Aligns with Phase 3 roadmap goal of removing template-specific dispatch", "phase": "design"},
+    {"decision": "es_profesor binary column (0/1) to distinguish row types", "rationale": "Simple, operator-controlled", "phase": "design"},
+    {"decision": "fecha_inicio added as required column", "rationale": "Email text references confirmed start date but was not showing it", "phase": "implementation"}
+  ],
+  "uncommitted_files": [],
+  "next_action": "Copy src/Templates.gs and src/Main.gs to GAS editor, run test functions, then smoke test with real data",
+  "context_notes": "All code is committed and pushed to origin/main. Templates are fully implemented. Only manual GAS deployment and smoke test remain."
+}
