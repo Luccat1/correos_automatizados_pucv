@@ -543,7 +543,7 @@ const classStartStudentsTemplate = {
   id: 'class_start_students',
   name: 'Inicio de Clases — Estudiantes',
   description: 'Confirma a cada estudiante el inicio de su curso con sala y datos del profesor.',
-  requiredHeaders: ['nombre', 'correo', 'idioma', 'nivel', 'horario', 'sala', 'nombre_profesor', 'correo_profesor', 'es_profesor'],
+  requiredHeaders: ['nombre', 'correo', 'idioma', 'nivel', 'horario', 'sala', 'fecha_inicio', 'nombre_profesor', 'correo_profesor', 'es_profesor'],
   statusColumn: 'Estado Inicio',
   senderName: 'Programa Idiomas PUCV',
   headerTitle: 'INICIO DE CLASES',
@@ -561,11 +561,12 @@ const classStartStudentsTemplate = {
     const nivel           = requiredCell(row, headers['nivel'],           'Nivel',           rowIndex);
     const horario         = requiredCell(row, headers['horario'],         'Horario',         rowIndex);
     const sala            = requiredCell(row, headers['sala'],            'Sala',            rowIndex);
+    const fechaInicio     = requiredCell(row, headers['fecha_inicio'],    'Fecha Inicio',    rowIndex);
     const nombreProfesor  = requiredCell(row, headers['nombre_profesor'], 'Nombre Profesor', rowIndex);
     const correoProfesor  = requiredCell(row, headers['correo_profesor'], 'Correo Profesor', rowIndex);
 
     return {
-      nombre, correo, idioma, nivel, horario, sala,
+      nombre, correo, idioma, nivel, horario, sala, fechaInicio,
       nombreProfesor, correoProfesor,
       firstName: extractFirstName(nombre, 'estudiante')
     };
@@ -577,6 +578,7 @@ const classStartStudentsTemplate = {
     content += `<p>Te informamos que tu curso ya tiene fecha de inicio confirmada:</p>`;
 
     const courseInfo = [
+      `<strong>Fecha de inicio:</strong> ${data.fechaInicio}`,
       `<strong>Idioma:</strong> ${data.idioma}`,
       `<strong>Nivel:</strong> ${data.nivel}`,
       `<strong>Horario:</strong> ${data.horario}`,
@@ -651,7 +653,7 @@ const classStartProfessorTemplate = {
   id: 'class_start_professor',
   name: 'Inicio de Clases — Profesores',
   description: 'Notifica a cada profesor el inicio de su curso con la nómina de estudiantes inscritos.',
-  requiredHeaders: ['nombre', 'correo', 'idioma', 'nivel', 'horario', 'sala', 'nombre_profesor', 'correo_profesor', 'es_profesor'],
+  requiredHeaders: ['nombre', 'correo', 'idioma', 'nivel', 'horario', 'sala', 'fecha_inicio', 'nombre_profesor', 'correo_profesor', 'es_profesor'],
   // nombre_profesor and correo_profesor are required here to enforce that the shared data sheet
   // is correctly set up for the students template. The professor template does not read these columns
   // from the professor row (professors use nombre/correo directly).
@@ -697,7 +699,8 @@ const classStartProfessorTemplate = {
     const idioma  = requiredCell(row, headers['idioma'],  'Idioma',  rowIndex);
     const nivel   = requiredCell(row, headers['nivel'],   'Nivel',   rowIndex);
     const horario = requiredCell(row, headers['horario'], 'Horario', rowIndex);
-    const sala    = requiredCell(row, headers['sala'],    'Sala',    rowIndex);
+    const sala        = requiredCell(row, headers['sala'],         'Sala',         rowIndex);
+    const fechaInicio = requiredCell(row, headers['fecha_inicio'], 'Fecha Inicio', rowIndex);
 
     const key = _makeCourseKey(idioma, nivel, horario);
     const students = (extraData.courseGroups && extraData.courseGroups[key]) || [];
@@ -705,7 +708,7 @@ const classStartProfessorTemplate = {
     if (students.length === 0) return null; // No matching students — skip this professor row
 
     return {
-      nombre, correo, idioma, nivel, horario, sala,
+      nombre, correo, idioma, nivel, horario, sala, fechaInicio,
       firstName: extractFirstName(nombre, 'profesor'),
       students: students
     };
@@ -716,6 +719,7 @@ const classStartProfessorTemplate = {
     content += `<p>A continuación encontrará la información de su curso y la nómina de estudiantes inscritos:</p>`;
 
     const courseInfo = [
+      `<strong>Fecha de inicio:</strong> ${data.fechaInicio}`,
       `<strong>Idioma:</strong> ${data.idioma}`,
       `<strong>Nivel:</strong> ${data.nivel}`,
       `<strong>Horario:</strong> ${data.horario}`,
