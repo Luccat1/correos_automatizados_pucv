@@ -275,6 +275,8 @@ function menuCreateDrafts() {
  * Shared execution logic for sending and drafting.
  * @param {boolean} asDraft
  * @param {Object} [overrides] - Optional overrides from the GUI.
+ * Templates may optionally define prepareExtraData(rows, headers, extraData) to
+ * aggregate cross-row data before per-row processing begins.
  * @private
  */
 function _executeBatch(asDraft, overrides) {
@@ -310,6 +312,8 @@ function _executeBatch(asDraft, overrides) {
     if (overrides.extraNote !== undefined) extraData.configExtras.extra_note = overrides.extraNote;
   }
 
+  // Legacy: report_delivery pre-dates the prepareExtraData hook.
+  // Future templates should implement prepareExtraData instead.
   if (template.id === 'report_delivery') {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const dirSheet = ss.getSheets().find(s => s.getName().toLowerCase() === 'directorio');
