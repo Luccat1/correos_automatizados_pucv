@@ -121,8 +121,13 @@ function menuSendTest() {
   const rows = allValues.slice(1);
   const row = rows[0];
 
+  if (!row) {
+    showAlert('Sin Datos', 'La hoja de datos está vacía.');
+    return;
+  }
+
   try {
-    const extraData = { configExtras: config.extras };
+    const extraData = { configExtras: { ...config.extras } };
     if (typeof template.prepareExtraData === 'function') {
       template.prepareExtraData(rows, headers, extraData);
     }
@@ -185,8 +190,13 @@ function menuPreview() {
   const rows = allValues.slice(1);
   const row = rows[0];
 
+  if (!row) {
+    showAlert('Sin Datos', 'La hoja de datos está vacía.');
+    return;
+  }
+
   try {
-    const extraData = { configExtras: config.extras };
+    const extraData = { configExtras: { ...config.extras } };
     if (typeof template.prepareExtraData === 'function') {
       template.prepareExtraData(rows, headers, extraData);
     }
