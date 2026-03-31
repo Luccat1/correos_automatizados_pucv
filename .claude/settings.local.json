@@ -3,7 +3,14 @@
     "allow": [
       "Bash(npx get-shit-done-cc@latest)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(node:*)",
+      "Skill(gsd:add-todo)",
+      "Skill(gsd:check-todos)",
+      "Bash(git rm:*)",
+      "Bash(git push:*)",
+      "Skill(gsd:pause-work)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }
