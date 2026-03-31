@@ -566,7 +566,8 @@ const classStartStudentsTemplate = {
     const correoProfesor  = requiredCell(row, headers['correo_profesor'], 'Correo Profesor', rowIndex);
 
     return {
-      nombre, correo, idioma, nivel, horario, sala, fechaInicio,
+      nombre, correo, idioma, nivel, horario, sala,
+      fechaInicio: formatDateEs(fechaInicio),
       nombreProfesor, correoProfesor,
       firstName: extractFirstName(nombre, 'estudiante')
     };
@@ -708,7 +709,8 @@ const classStartProfessorTemplate = {
     if (students.length === 0) return null; // No matching students — skip this professor row
 
     return {
-      nombre, correo, idioma, nivel, horario, sala, fechaInicio,
+      nombre, correo, idioma, nivel, horario, sala,
+      fechaInicio: formatDateEs(fechaInicio),
       firstName: extractFirstName(nombre, 'profesor'),
       students: students
     };
