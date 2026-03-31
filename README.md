@@ -38,6 +38,8 @@ El sistema se basa en una estructura de tres archivos principales que deben copi
 | `code_delivery` | Envío de Códigos | Distribución segura de códigos de acceso (libros/tests). |
 | `report_delivery` | Entrega de Informes | Reportes de evaluación con búsqueda en directorio docente. |
 | `survey` | Encuesta de Percepción | Invitación a completar encuestas institucionales. |
+| `class_start_students` | Inicio de Clases (Estudiantes) | Notificación de fecha de inicio confirmada a estudiantes. |
+| `class_start_professor` | Inicio de Clases (Profesor) | Notificación a profesores con listado de estudiantes del curso. |
 
 ## 🛠️ Guías Rápidas
 
