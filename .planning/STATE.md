@@ -47,10 +47,11 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-3 todos capturados (2026-03-31):
+4 todos capturados:
 - `refactor-eliminar-codigo-duplicado-y-deuda-tecnica-en-main-gs` — Código duplicado (menuPreview/menuSendTest), legacy report_delivery en _executeBatch, validación incompleta en registerTemplate, parseEmailList inconsistente
 - `mejorar-manejo-de-errores-en-batch-y-ux-de-confirmacion` — Error silenciado como SALTADO en processFn, sin conteo de filas en confirmación, falta opción "Reintentar Errores"
 - `sanitizar-html-en-email-builders-para-prevenir-xss` — buildButton/buildInfoBox/buildEmailLayout interpolan sin escapar HTML
+- `mejorar-usabilidad-de-plantillas-y-ampliar-herramientas-del-menu` (2026-04-14) — Helpers para usuarios no-técnicos (validación previa, diagnóstico de hoja, instrucciones in-sheet) + ampliar menú (ver config activa, previsualización masiva, guía de uso)
 
 ### Blockers/Concerns
 
