@@ -84,7 +84,10 @@ const certificateTemplate = {
     // Extract file ID and share
     const fileId = extractFileId(enlace);
     if (fileId) {
-      shareFileAsViewer(fileId, correo);
+      const shareResult = shareFileAsViewer(fileId, correo);
+      if (!shareResult.success) {
+        return { error: 'No se pudo compartir el archivo ' + fileId };
+      }
     }
 
     return {
@@ -95,6 +98,19 @@ const certificateTemplate = {
       firstName: extractFirstName(nombre, "estudiante"),
       programName: (extraData && extraData.configExtras && extraData.configExtras.program_name) || this.defaults?.programName
     };
+  },
+
+  /**
+   * Returns the recipient email without triggering Drive side effects.
+   * Used by the pre-flight email validation loop in Main.gs (ROBUST-02).
+   * @param {Array} row - Row data.
+   * @param {Object} headers - Header mapping.
+   * @param {number} rowIndex - 1-based row index.
+   * @param {Object} extraData
+   * @returns {string|null}
+   */
+  getRecipientEmail: function(row, headers, rowIndex, extraData) {
+    return safeCell(row, headers['correo']);
   },
 
   /**
