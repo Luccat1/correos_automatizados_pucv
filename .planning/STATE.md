@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 01-reliability-hardening 01-01-PLAN
-last_updated: "2026-04-14T21:44:48.684Z"
+stopped_at: Completed 01-reliability-hardening 01-02-PLAN.md
+last_updated: "2026-04-14T21:49:35.697Z"
 last_activity: 2026-03-25 — Roadmap created
 progress:
   total_phases: 3
@@ -52,7 +52,7 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: -
 
 *Updated after each plan completion*
-| Phase 01-reliability-hardening P01 | 5 | 1 tasks | 1 files |
+| Phase 01-reliability-hardening P02 | 15 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -63,7 +63,8 @@ Recent decisions affecting current work:
 
 - [Roadmap]: 3-phase coarse structure: hardening first, then operational quality, then architecture/tooling
 - [Roadmap]: ARCH-02 (report_delivery hardcoded indexes) placed in Phase 1 as a reliability fix, not Phase 3
-- [Phase 01-reliability-hardening]: Added empty configKeys arrays to class_start templates — consistent interface allows selector dialog to treat all templates uniformly
+- [Phase 01-reliability-hardening]: Drive sharing failure in processRow returns { error } object (not throw) to avoid double-wrapping in processFn catch block
+- [Phase 01-reliability-hardening]: getRecipientEmail on templates enables side-effect-free pre-flight email validation without Drive API calls
 
 ### Pending Todos
 
@@ -81,6 +82,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-04-14T21:44:48.679Z
-Stopped at: Completed 01-reliability-hardening 01-01-PLAN
+Last session: 2026-04-14T21:49:35.685Z
+Stopped at: Completed 01-reliability-hardening 01-02-PLAN.md
 Resume file: None
