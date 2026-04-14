@@ -475,19 +475,29 @@ const reportDeliveryTemplate = {
 
 /**
  * Survey Template
- * Student perception survey delivery with certificate warning.
+ * Student perception survey delivery. Survey type and certificate requirement are configurable.
+ *
+ * configKeys:
+ *   survey_url              — URL of the survey (required in practice)
+ *   program_name            — program/course name shown in the body
+ *   survey_type             — label shown in the email: "inicio", "intermedia", "finalización", "otro"
+ *                             Leave blank to omit the type label.
+ *   deadline                — optional deadline date shown as an info box (e.g. "viernes 18 de abril")
+ *   require_for_certificate — set to "si" or "true" to show the certificate-requirement warning.
+ *                             Omit or set to anything else to hide it.
+ *   extra_note              — optional free-text note shown in an info box
  */
 const surveyTemplate = {
   id: 'survey',
   name: 'Encuesta de Percepción',
-  description: 'Solicitud de feedback sobre cursos con aviso de certificación.',
-  requiredHeaders: ['correo'],
-  configKeys: ['survey_url', 'program_name', 'extra_note'],
+  description: 'Solicitud de feedback sobre cursos. Tipo de encuesta, fecha límite y aviso de certificación configurables.',
+  requiredHeaders: ['nombre', 'correo'],
+  configKeys: ['survey_url', 'program_name', 'survey_type', 'deadline', 'require_for_certificate', 'extra_note'],
   senderName: 'PUCV',
   statusColumn: 'Estado Encuesta',
   headerTitle: 'ENCUESTA DE PERCEPCIÓN',
   footerLines: ['Pontificia Universidad Católica de Valparaíso'],
-  
+
   defaults: {
     surveyUrl: "https://survey.pucv.cl/example",
     programName: "tu curso actual"
@@ -498,12 +508,16 @@ const surveyTemplate = {
     const correo = requiredCell(row, headers['correo'], 'Correo', rowIndex);
 
     const extras = extraData ? extraData.configExtras : {};
+    const requireRaw = (extras.require_for_certificate || '').trim().toLowerCase();
 
     return {
       nombre, correo,
       firstName: extractFirstName(nombre, "estudiante"),
       surveyUrl: extras.survey_url || this.defaults.surveyUrl,
       programName: extras.program_name || this.defaults.programName,
+      surveyType: extras.survey_type ? extras.survey_type.trim() : null,
+      deadline: extras.deadline ? extras.deadline.trim() : null,
+      requireForCertificate: requireRaw === 'si' || requireRaw === 'true',
       extraNote: extras.extra_note || null
     };
   },
@@ -513,18 +527,29 @@ const surveyTemplate = {
     const program = data.programName;
     const greeting = data.nombre ? `Estimado/a <strong>${data.firstName}</strong>:` : "Estimado/a estudiante:";
 
-    let content = `<p>${greeting}</p>`;
-    content += `<p>Para nosotros es fundamental conocer tu opinión sobre el desarrollo y calidad de <strong>${program}</strong>.</p>`;
-    content += `<p>Te invitamos a completar la siguiente encuesta de percepción, la cual no te tomará más de 5 minutos:</p>`;
-    
-    content += buildButton("Completar Encuesta", url);
+    // Normalize survey type: strip leading "encuesta" to avoid "encuesta de percepción de Encuesta de X"
+    const rawType = data.surveyType || '';
+    const cleanType = rawType.replace(/^encuesta\s+(de\s+)?/i, '').trim();
+    const typeContext = cleanType ? ` de <strong>${cleanType}</strong>` : '';
 
-    content += buildWarningBox(`<strong>Nota importante:</strong> Recuerda que completar esta encuesta es un requisito para el envío de tus certificados de aprobación.`);
+    let content = `<p>${greeting}</p>`;
+    content += `<p>Tu opinión sobre <strong>${program}</strong> es muy importante para nosotros.</p>`;
+    content += `<p>Te pedimos completar el siguiente formulario de percepción${typeContext}:</p>`;
+
+    content += buildButton("Responder formulario", url);
+
+    if (data.deadline) {
+      content += buildInfoBox(`Te pedimos responder antes del <strong>${data.deadline}</strong>.`);
+    }
+
+    if (data.requireForCertificate) {
+      content += buildWarningBox(`<strong>Nota importante:</strong> Recuerda que completar este formulario es un requisito para el envío de tus certificados de aprobación.`);
+    }
 
     if (data.extraNote) {
       content += buildInfoBox(data.extraNote);
     }
-    
+
     content += `<p>Agradecemos de antemano tu tiempo y colaboración.</p>`;
     content += `<p>Atentamente,<br>Dirección General de Asuntos Internacionales PUCV</p>`;
 
