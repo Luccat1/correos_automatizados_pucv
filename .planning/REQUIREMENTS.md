@@ -15,7 +15,7 @@
 - [ ] **ROBUST-03**: Operator can re-run a batch and only rows with ERROR status (or empty status) are processed; already-sent rows remain unchanged
 - [ ] **ROBUST-04**: Operator sees a quota forecast ("Cuota disponible: N correos") in the send dialog before committing to a batch
 - [ ] **ROBUST-05**: Operator sees a hard confirmation warning when batch size exceeds a configurable threshold (default: 50 rows)
-- [ ] **ROBUST-06**: Drive file-sharing failures (shareFileAsViewer) are caught and written to the status column as errors instead of proceeding to send a broken email link
+- [x] **ROBUST-06**: Drive file-sharing failures (shareFileAsViewer) are caught and written to the status column as errors instead of proceeding to send a broken email link
 
 ### Observability (Logging & Audit)
 
@@ -25,7 +25,7 @@
 ### Architecture Quality
 
 - [ ] **ARCH-01**: The `_executeBatch` function in Main.gs is template-agnostic — cross-sheet data loading (currently hardcoded for `report_delivery`) is handled via an optional `prepareExtraData(config, ss)` hook on the template object
-- [ ] **ARCH-02**: The `report_delivery` template reads its data columns by header name (via `mapHeaders`) instead of hardcoded 0-based indexes
+- [x] **ARCH-02**: The `report_delivery` template reads its data columns by header name (via `mapHeaders`) instead of hardcoded 0-based indexes
 - [ ] **ARCH-03**: Each template in Templates.gs has a named test function (e.g., `testCertificateTemplate()`) that exercises `processRow` and `buildHtml` with mock data and logs output to the GAS Execution Log
 
 ### User Experience
