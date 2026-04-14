@@ -8,7 +8,7 @@ Este sistema permite gestionar campañas de comunicación institucional de alta 
 
 ## 🏗️ Arquitectura
 
-El sistema se basa en una estructura de tres archivos principales que deben copiarse en el editor de Apps Script de cada hoja:
+El sistema se basa en una estructura de cinco archivos principales que deben copiarse en el editor de Apps Script de cada hoja:
 
 1.  **`Core.gs` (El Motor):** Contiene toda la lógica compartida.
     *   Manejo de hojas de cálculo y mapeo de cabeceras.
@@ -26,6 +26,10 @@ El sistema se basa en una estructura de tres archivos principales que deben copi
     *   Menú desplegable personalizado: Enviar, Prueba, Vista Previa, Borradores.
     *   Carga automática de configuración desde la hoja "Config".
     *   Orquestación de envíos masivos y creación de borradores.
+
+4.  **Archivos HTML de UI:** Vistas para los diálogos en Google Sheets.
+    *   **`SendDialog.html`:** Interfaz para personalizar asunto, copia y notas antes de enviar.
+    *   **`TemplateSelector.html`:** Galería visual para la selección y configuración de nuevas plantillas.
 
 ## 📋 Plantillas Disponibles
 

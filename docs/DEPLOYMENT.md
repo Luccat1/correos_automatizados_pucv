@@ -10,11 +10,13 @@ Siga estos pasos para implementar el Sistema de Correos Automatizados en una nue
 
 ## 2. Instalación del Código
 
-En el editor de Apps Script, cree tres archivos de tipo "Script" (.gs) y copie el contenido correspondiente desde la carpeta `src/` de este repositorio:
+En el editor de Apps Script, cree tres archivos de tipo "Script" (.gs) y dos archivos de tipo "HTML" (.html), luego copie el contenido correspondiente desde la carpeta `src/` de este repositorio:
 
-1.  **`Core.gs`**: Copie el contenido de `src/Core.gs`.
-2.  **`Templates.gs`**: Copie el contenido de `src/Templates.gs`.
-3.  **`Main.gs`**: Copie el contenido de `src/Main.gs`.
+1.  **`Core.gs`** (Tipo: Script): Copie el contenido de `src/Core.gs`.
+2.  **`Templates.gs`** (Tipo: Script): Copie el contenido de `src/Templates.gs`.
+3.  **`Main.gs`** (Tipo: Script): Copie el contenido de `src/Main.gs`.
+4.  **`SendDialog.html`** (Tipo: HTML): Copie el contenido de `src/SendDialog.html`.
+5.  **`TemplateSelector.html`** (Tipo: HTML): Copie el contenido de `src/TemplateSelector.html`.
 
 *Nota: No es necesario realizar cambios en el código de estos archivos para el despliegue estándar.*
 

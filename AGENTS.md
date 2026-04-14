@@ -8,11 +8,12 @@ A robust, template-based email automation system for Google Apps Script. Designe
 
 ## Architecture
 
-The project follows a modular 3-file structure for Google Apps Script bound scripts:
+The project follows a modular 5-file structure for Google Apps Script bound scripts:
 
 1.  **`Core.gs`**: The engine. Handles low-level GAS API interactions (Gmail, Drive, Spreadsheet), HTML layout wrapping, and UI components.
 2.  **`Templates.gs`**: The registry. Uses a registration pattern to define email campaigns (`certificate`, `survey`, `confirmation`, etc.).
 3.  **`Main.gs`**: The controller. Manages user interactions via custom menus and coordinates data flow between the engine and templates.
+4.  **`SendDialog.html` & `TemplateSelector.html`**: The UI layer. HTML views for Google Sheets modal dialogs (pre-send customization and template selection).
 
 ## Core Patterns
 
