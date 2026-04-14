@@ -412,7 +412,9 @@ const reportDeliveryTemplate = {
   id: 'report_delivery',
   name: 'Entrega de Informes',
   description: 'Envío de informes de evaluación docente compartidos por Drive.',
-  requiredHeaders: [], // Special case: uses fixed column indexes from Informe script
+  // Operador: renombrar columnas en Datos_report_delivery a: profesor, curso, doc_id, url_informe
+  // Tambien renombrar columnas en hoja Directorio a: nombre, correo, cc
+  requiredHeaders: ['profesor', 'curso', 'doc_id', 'url_informe'],
   configKeys: ['directory_sheet_name'],
   senderName: 'Unidad de Evaluación Docente CELE',
   senderAlias: 'cele.dgai@pucv.cl',
@@ -421,20 +423,21 @@ const reportDeliveryTemplate = {
   footerLines: ['Unidad de Evaluación Docente', 'Centro de Estudios y Enseñanza de Lenguas Extranjeras', 'PUCV'],
 
   /**
-   * Special helper for professor lookup.
+   * Special helper for professor lookup using mapHeaders-based column access.
    * @param {string} professorName
    * @param {Array.<Array>} directoryRows
+   * @param {Object} dirHeaders - mapHeaders result for the Directorio sheet
    * @returns {Object|null}
    */
-  directoryLookup: function(professorName, directoryRows) {
-    if (!professorName || !directoryRows) return null;
+  directoryLookup: function(professorName, directoryRows, dirHeaders) {
+    if (!professorName || !directoryRows || !dirHeaders) return null;
     const searchName = professorName.toLowerCase().trim();
     for (const dRow of directoryRows) {
-      const dName = String(dRow[0] || "").toLowerCase().trim();
+      const dName = String(safeCell(dRow, dirHeaders['nombre'])).toLowerCase().trim();
       if (dName === searchName) {
         return {
-          email: String(dRow[1] || "").trim(),
-          cc: String(dRow[2] || "").trim()
+          email: safeCell(dRow, dirHeaders['correo']),
+          cc: safeCell(dRow, dirHeaders['cc'])
         };
       }
     }
@@ -442,26 +445,25 @@ const reportDeliveryTemplate = {
   },
 
   processRow: function(row, headers, rowIndex, extraData) {
-    // Indexes based on Informe script (0-based)
-    // COL_LOG_PROFESSOR: 1, COL_LOG_COURSE: 2, COL_LOG_DOC_ID: 3, COL_LOG_URL: 4
-    const professorName = safeCell(row, 1);
-    const course = safeCell(row, 2);
-    const docId = safeCell(row, 3);
-    const reportUrl = safeCell(row, 4);
-
-    if (!professorName || !docId) return null;
+    const professorName = requiredCell(row, headers['profesor'], 'Profesor', rowIndex);
+    const course = requiredCell(row, headers['curso'], 'Curso', rowIndex);
+    const docId = requiredCell(row, headers['doc_id'], 'Doc ID', rowIndex);
+    const reportUrl = requiredCell(row, headers['url_informe'], 'URL Informe', rowIndex);
 
     // Lookup email in directory (passed via extraData)
     const directoryData = extraData ? extraData.directoryRows : null;
-    const lookup = this.directoryLookup(professorName, directoryData);
-    
+    const dirHeaders = extraData ? extraData.dirHeaders : null;
+    const lookup = this.directoryLookup(professorName, directoryData, dirHeaders);
+
     if (!lookup || !lookup.email) {
-      console.warn(`No se encontró correo para el profesor: ${professorName}`);
-      return null;
+      return { error: 'Profesor no encontrado en Directorio: ' + professorName };
     }
 
-    // Share report
-    shareFileAsViewer(docId, lookup.email);
+    // Share report with professor and check result
+    const shareResult = shareFileAsViewer(docId, lookup.email);
+    if (!shareResult.success) {
+      return { error: 'No se pudo compartir el archivo ' + docId };
+    }
 
     return {
       to: lookup.email,
@@ -471,6 +473,24 @@ const reportDeliveryTemplate = {
       reportUrl,
       firstName: extractFirstName(professorName) // No fallback needed for professor
     };
+  },
+
+  /**
+   * Returns the recipient email without triggering Drive side effects.
+   * Used by the pre-flight email validation loop in Main.gs (ROBUST-02).
+   * @param {Array} row - Row data.
+   * @param {Object} headers - Header mapping.
+   * @param {number} rowIndex - 1-based row index.
+   * @param {Object} extraData
+   * @returns {string|null}
+   */
+  getRecipientEmail: function(row, headers, rowIndex, extraData) {
+    const professorName = safeCell(row, headers['profesor']);
+    if (!professorName) return null;
+    const directoryData = extraData ? extraData.directoryRows : null;
+    const dirHeaders = extraData ? extraData.dirHeaders : null;
+    const lookup = this.directoryLookup(professorName, directoryData, dirHeaders);
+    return lookup ? lookup.email : null;
   },
 
   buildHtml: function(data) {
