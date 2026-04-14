@@ -27,11 +27,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Rows with syntactically invalid email addresses are skipped before sending, and the operator sees a warning listing which rows were skipped
   3. When Drive file sharing fails for a certificate or report row, that row gets an error status and no email is sent with a broken link
   4. The report_delivery template reads columns by header name (via mapHeaders), so reordering columns in the Directorio sheet does not silently send wrong data
-**Plans**: 2 plans
-
-Plans:
-- [ ] 01-01-PLAN.md — Error object convention in sendBatch + pre-flight email validation in _executeBatch (Core.gs + Main.gs)
-- [ ] 01-02-PLAN.md — Drive sharing failure handling and mapHeaders migration for certificate and report_delivery templates (Templates.gs)
+**Plans**: TBD
 
 ### Phase 2: Operational Quality
 **Goal**: Operators have full situational awareness before, during, and after every batch run -- and can safely retry failures without resending
@@ -63,6 +59,6 @@ Phases execute in numeric order: 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Reliability Hardening | 0/2 | Not started | - |
+| 1. Reliability Hardening | 1/TBD | In progress | - |
 | 2. Operational Quality | 0/TBD | Not started | - |
 | 3. Architecture & Tooling | 0/TBD | Not started | - |

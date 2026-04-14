@@ -569,6 +569,7 @@ const classStartStudentsTemplate = {
   name: 'Inicio de Clases — Estudiantes',
   description: 'Confirma a cada estudiante el inicio de su curso con sala y datos del profesor.',
   requiredHeaders: ['nombre', 'correo', 'idioma', 'nivel', 'horario', 'sala', 'fecha_inicio', 'nombre_profesor', 'correo_profesor', 'es_profesor'],
+  configKeys: [],
   statusColumn: 'Estado Inicio',
   senderName: 'Programa Idiomas PUCV',
   headerTitle: 'INICIO DE CLASES',
@@ -683,6 +684,7 @@ const classStartProfessorTemplate = {
   // nombre_profesor and correo_profesor are required here to enforce that the shared data sheet
   // is correctly set up for the students template. The professor template does not read these columns
   // from the professor row (professors use nombre/correo directly).
+  configKeys: [],
   statusColumn: 'Estado Inicio Profesor',
   senderName: 'Programa Idiomas PUCV',
   headerTitle: 'INICIO DE CLASES',
