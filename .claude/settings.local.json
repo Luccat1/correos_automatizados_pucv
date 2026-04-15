@@ -12,7 +12,9 @@
       "Skill(gsd:pause-work)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "Skill(gsd:plan-phase)",
-      "Skill(gsd:execute-phase)"
+      "Skill(gsd:execute-phase)",
+      "WebSearch",
+      "Bash(grep -h requirements .planning/phases/02-operational-quality/*-PLAN.md)"
     ]
   }
 }
