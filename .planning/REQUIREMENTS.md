@@ -12,15 +12,15 @@
 
 - [ ] **ROBUST-01**: Operator can see the specific error reason in the status column when a row fails to process (e.g., "ERROR: correo invalido", not "SALTADO")
 - [ ] **ROBUST-02**: Operator is warned before sending if any recipient email addresses are syntactically invalid, and those rows are skipped with a clear error status
-- [ ] **ROBUST-03**: Operator can re-run a batch and only rows with ERROR status (or empty status) are processed; already-sent rows remain unchanged
+- [x] **ROBUST-03**: Operator can re-run a batch and only rows with ERROR status (or empty status) are processed; already-sent rows remain unchanged
 - [ ] **ROBUST-04**: Operator sees a quota forecast ("Cuota disponible: N correos") in the send dialog before committing to a batch
 - [ ] **ROBUST-05**: Operator sees a hard confirmation warning when batch size exceeds a configurable threshold (default: 50 rows)
 - [ ] **ROBUST-06**: Drive file-sharing failures (shareFileAsViewer) are caught and written to the status column as errors instead of proceeding to send a broken email link
 
 ### Observability (Logging & Audit)
 
-- [ ] **LOG-01**: Every batch run appends one row to a persistent "Log" sheet containing: timestamp, template name, operator email, total rows, sent count, error count, asDraft flag
-- [ ] **LOG-02**: Batch progress is shown to the operator via toast notifications (SpreadsheetApp.toast) at regular intervals during long-running batches
+- [x] **LOG-01**: Every batch run appends one row to a persistent "Log" sheet containing: timestamp, template name, operator email, total rows, sent count, error count, asDraft flag
+- [x] **LOG-02**: Batch progress is shown to the operator via toast notifications (SpreadsheetApp.toast) at regular intervals during long-running batches
 
 ### Architecture Quality
 
@@ -30,7 +30,7 @@
 
 ### User Experience
 
-- [ ] **UX-01**: The configuration validator runs when the user triggers a send action and reports all missing headers, missing sheets, and unknown template IDs in one consolidated error alert — before any emails are sent
+- [x] **UX-01**: The configuration validator runs when the user triggers a send action and reports all missing headers, missing sheets, and unknown template IDs in one consolidated error alert — before any emails are sent
 - [ ] **UX-02**: The send dialog displays a pre-flight summary showing: template name, data sheet name, row count, remaining quota, and selected sender alias
 
 ### Tooling
@@ -70,15 +70,15 @@ These are valuable but not required for this milestone:
 |--------|-------|------|
 | ROBUST-01 | Phase 1 | TBD |
 | ROBUST-02 | Phase 1 | TBD |
-| ROBUST-03 | Phase 2 | TBD |
+| ROBUST-03 | Phase 2 | 02-01 |
 | ROBUST-04 | Phase 2 | TBD |
 | ROBUST-05 | Phase 2 | TBD |
 | ROBUST-06 | Phase 1 | TBD |
-| LOG-01 | Phase 2 | TBD |
-| LOG-02 | Phase 2 | TBD |
+| LOG-01 | Phase 2 | 02-01 |
+| LOG-02 | Phase 2 | 02-01 |
 | ARCH-01 | Phase 3 | TBD |
 | ARCH-02 | Phase 1 | TBD |
 | ARCH-03 | Phase 3 | TBD |
-| UX-01 | Phase 2 | TBD |
+| UX-01 | Phase 2 | 02-01 |
 | UX-02 | Phase 2 | TBD |
 | TOOL-01 | Phase 3 | TBD |
