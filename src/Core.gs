@@ -282,6 +282,7 @@ function _getAliasesCache() {
  * @param {Array.<Array>} rows - Data rows to process.
  * @param {Function} processFn - Callback (row, index) => { to, subject, htmlBody, plainBody, cc, bcc } | null
  * @param {Object} options - Config options.
+ * @param {Function} [options.onProgress] - Callback(current, total, sent, errors) called at each throttle interval.
  * @returns {Object} { processed: number, errors: number, statuses: Array.<Array> }
  */
 function sendBatch(rows, processFn, options) {
@@ -326,8 +327,11 @@ function sendBatch(rows, processFn, options) {
       errors++;
     }
 
-    // Throttling
+    // Throttling + progress callback (LOG-02)
     if (options.sleepEvery && (i + 1) % options.sleepEvery === 0) {
+      if (typeof options.onProgress === 'function') {
+        options.onProgress(i + 1, rows.length, processed, errors);
+      }
       sleep(options.sleepMs || 1000);
     }
   }
