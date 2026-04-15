@@ -11,7 +11,8 @@
       "Bash(git push:*)",
       "Skill(gsd:pause-work)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "Skill(gsd:plan-phase)"
+      "Skill(gsd:plan-phase)",
+      "Skill(gsd:execute-phase)"
     ]
   }
 }
