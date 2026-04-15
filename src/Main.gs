@@ -379,8 +379,9 @@ function _executeBatch(asDraft, overrides) {
     const rowIndex = i + 2;
     const currentStatus = String(row[statusCol - 1] || '').toLowerCase();
     
-    // Skip if already sent/drafted or explicitly skipped (saltado)
-    if (currentStatus.includes('enviado') || currentStatus.includes('borrador') || currentStatus.includes('saltado')) {
+    // Only skip terminal states (enviado/borrador). ERROR and empty rows are re-processable.
+    // Legacy SALTADO rows are also re-processable (Phase 1 converted these to ERROR: reason).
+    if (currentStatus.includes('enviado') || currentStatus.includes('borrador')) {
       return null;
     }
 
@@ -429,12 +430,40 @@ function _executeBatch(asDraft, overrides) {
     sleepMs: 1000
   };
 
+  // Toast progress notifications (LOG-02)
+  options.onProgress = function(current, total, sent, errs) {
+    SpreadsheetApp.getActiveSpreadsheet().toast(
+      'Procesando fila ' + current + ' de ' + total + ' (' + sent + ' enviados, ' + errs + ' errores)',
+      'Progreso de envio',
+      -1
+    );
+  };
+
   const results = sendBatch(rows, processFn, options);
 
   // Update statuses
   batchUpdateColumn(sheet, 2, statusCol, results.statuses);
 
+  // Append to persistent Log sheet (LOG-01)
+  _appendLogEntry({
+    timestamp: now(),
+    templateId: template.id,
+    templateName: template.name,
+    operator: Session.getActiveUser().getEmail(),
+    totalRows: rows.length,
+    sent: results.processed,
+    errors: results.errors,
+    asDraft: asDraft,
+    subject: (overrides && overrides.subject) || template.headerTitle
+  });
+
   showResult(results.processed, results.errors);
+
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    'Proceso finalizado: ' + results.processed + ' enviados, ' + results.errors + ' errores.',
+    'Envio completado',
+    5
+  );
 }
 
 /**
@@ -587,6 +616,82 @@ function _getDataSheet(name) {
 }
 
 /**
+ * Validates configuration before showing the send dialog.
+ * Returns an array of error strings (empty = valid).
+ * @param {Object} config - From _getConfig()
+ * @param {Object} template - From getTemplate()
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet - Data sheet
+ * @returns {Array.<string>}
+ * @private
+ */
+function _validateConfig(config, template, sheet) {
+  var errors = [];
+
+  // Check data sheet has required headers
+  var headers = mapHeaders(sheet);
+  var missing = (template.requiredHeaders || []).filter(function(h) {
+    return headers[h] === undefined;
+  });
+  if (missing.length > 0) {
+    errors.push('Columnas faltantes en hoja de datos: ' + missing.join(', '));
+  }
+
+  // Check for empty data
+  var rowCount = sheet.getLastRow() - 1;
+  if (rowCount <= 0) {
+    errors.push('La hoja de datos "' + sheet.getName() + '" esta vacia.');
+  }
+
+  // Check sender alias is valid if specified
+  if (config.senderAlias) {
+    try {
+      var aliases = GmailApp.getAliases();
+      if (aliases.indexOf(config.senderAlias) === -1) {
+        errors.push('El alias "' + config.senderAlias + '" no esta configurado en Gmail. Alias disponibles: ' + (aliases.length > 0 ? aliases.join(', ') : 'ninguno'));
+      }
+    } catch (e) {
+      // Non-fatal: alias check failed, skip validation
+    }
+  }
+
+  return errors;
+}
+
+/**
+ * Appends a batch summary row to the persistent "Log" sheet.
+ * Creates the sheet and header row if it does not exist.
+ * @param {Object} logData
+ * @param {string} logData.timestamp
+ * @param {string} logData.templateId
+ * @param {string} logData.templateName
+ * @param {string} logData.operator
+ * @param {number} logData.totalRows
+ * @param {number} logData.sent
+ * @param {number} logData.errors
+ * @param {boolean} logData.asDraft
+ * @param {string} logData.subject
+ * @private
+ */
+function _appendLogEntry(logData) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var logSheet = ss.getSheetByName('Log');
+  if (!logSheet) {
+    logSheet = ss.insertSheet('Log');
+    logSheet.getRange(1, 1, 1, 9).setValues([[
+      'Timestamp', 'Template ID', 'Template', 'Operador',
+      'Total Filas', 'Enviados', 'Errores', 'Borrador', 'Asunto'
+    ]]);
+    logSheet.getRange(1, 1, 1, 9).setFontWeight('bold').setBackground('#f3f3f3');
+    logSheet.setFrozenRows(1);
+  }
+  logSheet.appendRow([
+    logData.timestamp, logData.templateId, logData.templateName,
+    logData.operator, logData.totalRows, logData.sent,
+    logData.errors, logData.asDraft, logData.subject
+  ]);
+}
+
+/**
  * Shows the pre-send customization dialog.
  * @param {boolean} asDraft
  * @private
@@ -599,18 +704,18 @@ function _showSendDialog(asDraft) {
   const sheet = _getDataSheet(config.dataSheet);
   if (!sheet) return;
 
-  const headers = mapHeaders(sheet);
-  const missing = template.requiredHeaders.filter(h => headers[h] === undefined);
-  if (missing.length > 0) {
-    showAlert('Cabeceras Faltantes', `Faltan las siguientes columnas requeridas: ${missing.join(', ')}`);
+  // Consolidated pre-flight validation (UX-01)
+  const validationErrors = _validateConfig(config, template, sheet);
+  if (validationErrors.length > 0) {
+    showAlert('Errores de Configuracion',
+      'Se encontraron los siguientes problemas:\n\n' +
+      validationErrors.map(function(e, i) { return (i + 1) + '. ' + e; }).join('\n') +
+      '\n\nCorrija estos problemas antes de continuar.'
+    );
     return;
   }
 
   const rowCount = sheet.getLastRow() - 1;
-  if (rowCount <= 0) {
-    showAlert('Sin Datos', 'La hoja de datos está vacía.');
-    return;
-  }
 
   const html = HtmlService.createTemplateFromFile('SendDialog');
   html.templateName = template.name;

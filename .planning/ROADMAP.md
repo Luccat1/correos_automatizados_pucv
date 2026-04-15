@@ -39,7 +39,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. When batch size exceeds the configured threshold (default 50), the operator must confirm through a hard warning before proceeding
   4. Every batch run appends a summary row to a persistent "Log" sheet (timestamp, template, operator, sent count, error count, draft flag)
   5. During long batches, the operator sees toast progress notifications at regular intervals
-**Plans**: 2 (02-01: Core reliability + logging, 02-02: Pre-flight dialog + batch guard)
+**Plans**: TBD
 **UI hint**: yes
 
 ### Phase 3: Architecture & Tooling
@@ -59,6 +59,6 @@ Phases execute in numeric order: 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Reliability Hardening | 1/TBD | In progress | - |
-| 2. Operational Quality | 0/2 | Planned | - |
+| 1. Reliability Hardening | 2/2 | Complete | 2026-04-15 |
+| 2. Operational Quality | 1/2 | In progress | - |
 | 3. Architecture & Tooling | 0/TBD | Not started | - |
