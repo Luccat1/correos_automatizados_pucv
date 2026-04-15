@@ -726,6 +726,7 @@ function _showSendDialog(asDraft) {
   html.rowCount = rowCount;
   html.dataSheetName = sheet.getName();
   html.asDraft = asDraft;
+  html.senderAlias = config.senderAlias || template.senderAlias || '';
 
   const ui = html.evaluate()
       .setWidth(500)
@@ -741,4 +742,49 @@ function _showSendDialog(asDraft) {
  */
 function executeBatchFromDialog(formData) {
   _executeBatch(formData.asDraft, formData);
+}
+
+/**
+ * Server-side function called from SendDialog.html to fetch pre-flight data.
+ * Returns quota, sender alias, batch warning threshold, and processable row count.
+ * @returns {Object|null}
+ */
+function getPreflightData() {
+  var resolved = _getSelectedTemplate();
+  if (!resolved) return null;
+
+  var config = resolved.config;
+  var template = resolved.template;
+  var sheet = _getDataSheet(config.dataSheet);
+  if (!sheet) return null;
+
+  var headers = mapHeaders(sheet);
+  var statusColName = template.statusColumn || 'Estado_Envio';
+  var statusIdx = headers[statusColName.trim().toLowerCase()];
+
+  // Count processable rows (empty status or ERROR status)
+  var lastRow = sheet.getLastRow();
+  var processableCount = 0;
+  var totalDataRows = lastRow - 1;
+
+  if (totalDataRows > 0 && statusIdx !== undefined) {
+    var statusValues = sheet.getRange(2, statusIdx + 1, totalDataRows, 1).getValues();
+    for (var r = 0; r < statusValues.length; r++) {
+      var st = String(statusValues[r][0] || '').toLowerCase();
+      if (!st || st.includes('error') || st.includes('saltado')) {
+        processableCount++;
+      }
+    }
+  } else {
+    // No status column yet means all rows are processable
+    processableCount = totalDataRows;
+  }
+
+  return {
+    quota: MailApp.getRemainingDailyQuota(),
+    senderAlias: config.senderAlias || template.senderAlias || '',
+    batchThreshold: parseInt(config.extras.batch_warning_threshold) || 50,
+    processableRows: processableCount,
+    totalRows: totalDataRows
+  };
 }

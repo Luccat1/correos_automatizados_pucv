@@ -94,6 +94,13 @@
         font-style: italic;
         color: var(--primary);
       }
+      #batch-warning {
+        animation: fadeIn 0.3s ease-in;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
     </style>
   </head>
   <body>
@@ -104,7 +111,21 @@
     <div class="container">
       <div class="summary">
         <strong>Plantilla:</strong> <?= templateName ?><br />
-        <strong>Fuente:</strong> <?= dataSheetName ?> (<?= rowCount ?> filas detectadas)
+        <strong>Fuente:</strong> <?= dataSheetName ?> (<?= rowCount ?> filas totales)<br />
+        <strong>Alias remitente:</strong> <span id="sender-alias"><?= senderAlias || 'cuenta principal' ?></span><br />
+        <strong>Filas a procesar:</strong> <span id="processable-count"><em>calculando...</em></span><br />
+        <strong>Cuota disponible:</strong> <span id="quota-count"><em>consultando...</em></span> correos restantes
+      </div>
+
+      <div id="batch-warning" style="display:none; background-color: #ffebee; border: 2px solid #e53935; border-radius: 4px; padding: 12px 15px; margin-bottom: 20px;">
+        <strong style="color: #c62828;">Advertencia: Lote grande</strong>
+        <p style="margin: 8px 0; font-size: 13px; color: #b71c1c;">
+          Se procesaran <strong><span id="warning-count">--</span></strong> filas, lo cual supera el limite de <strong><span id="warning-threshold">--</span></strong>.
+        </p>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+          <input type="checkbox" id="confirm-large-batch" />
+          Confirmo que deseo procesar este lote grande
+        </label>
       </div>
 
       <form id="sendForm">
@@ -166,37 +187,78 @@
     </div>
 
     <script>
-      document
-        .getElementById("sendForm")
-        .addEventListener("submit", function (e) {
-          e.preventDefault();
+      var preflightData = null;
+      var batchWarningActive = false;
 
-          const submitBtn = document.getElementById("submitBtn");
-          const loader = document.getElementById("loader");
+      // Fetch pre-flight data on dialog load (ROBUST-04, UX-02)
+      google.script.run
+        .withSuccessHandler(function(data) {
+          if (!data) return;
+          preflightData = data;
 
-          submitBtn.disabled = true;
-          loader.style.display = "block";
+          // Update quota display
+          document.getElementById('quota-count').textContent = data.quota;
 
-          const formData = {
-            subject: document.getElementById("subject").value,
-            extraNote: document.getElementById("extraNote").value,
-            cc: document.getElementById("cc").value,
-            bcc: document.getElementById("bcc").value,
-            asDraft:
-              document.querySelector('input[name="asDraft"]').value === "true",
-          };
+          // Update processable row count
+          document.getElementById('processable-count').textContent = data.processableRows + ' de ' + data.totalRows;
 
-          google.script.run
-            .withSuccessHandler(function () {
-              google.script.host.close();
-            })
-            .withFailureHandler(function (err) {
-              alert("Error: " + err);
-              submitBtn.disabled = false;
-              loader.style.display = "none";
-            })
-            .executeBatchFromDialog(formData);
-        });
+          // Update sender alias if server has more info
+          if (data.senderAlias) {
+            document.getElementById('sender-alias').textContent = data.senderAlias;
+          }
+
+          // Show batch warning if processable rows exceed threshold (ROBUST-05)
+          if (data.processableRows > data.batchThreshold) {
+            batchWarningActive = true;
+            document.getElementById('warning-count').textContent = data.processableRows;
+            document.getElementById('warning-threshold').textContent = data.batchThreshold;
+            document.getElementById('batch-warning').style.display = 'block';
+            document.getElementById('submitBtn').disabled = true;
+          }
+        })
+        .withFailureHandler(function(err) {
+          document.getElementById('quota-count').textContent = 'error';
+          document.getElementById('processable-count').textContent = 'error';
+          console.error('getPreflightData failed:', err);
+        })
+        .getPreflightData();
+
+      // Large-batch checkbox enables/disables submit (ROBUST-05)
+      document.getElementById('confirm-large-batch').addEventListener('change', function() {
+        if (batchWarningActive) {
+          document.getElementById('submitBtn').disabled = !this.checked;
+        }
+      });
+
+      // Form submission
+      document.getElementById('sendForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        var submitBtn = document.getElementById('submitBtn');
+        var loader = document.getElementById('loader');
+
+        submitBtn.disabled = true;
+        loader.style.display = 'block';
+
+        var formData = {
+          subject: document.getElementById('subject').value,
+          extraNote: document.getElementById('extraNote').value,
+          cc: document.getElementById('cc').value,
+          bcc: document.getElementById('bcc').value,
+          asDraft: document.querySelector('input[name="asDraft"]').value === 'true'
+        };
+
+        google.script.run
+          .withSuccessHandler(function() {
+            google.script.host.close();
+          })
+          .withFailureHandler(function(err) {
+            alert('Error: ' + err);
+            submitBtn.disabled = false;
+            loader.style.display = 'none';
+          })
+          .executeBatchFromDialog(formData);
+      });
     </script>
   </body>
 </html>
