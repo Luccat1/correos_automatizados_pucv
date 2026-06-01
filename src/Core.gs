@@ -236,6 +236,9 @@ function sendEmail(options) {
     if (options.plainBody) emailOptions.body = options.plainBody;
     if (options.cc) emailOptions.cc = options.cc;
     if (options.bcc) emailOptions.bcc = options.bcc;
+    if (options.attachments && options.attachments.length > 0) {
+      emailOptions.attachments = options.attachments;
+    }
 
     // Handle Alias
     if (options.senderAlias) {

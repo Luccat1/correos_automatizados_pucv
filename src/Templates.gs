@@ -279,7 +279,7 @@ const placementTestTemplate = {
   name: 'Placement Test',
   description: 'Entrega de credenciales dinámicas para plataforma de test de nivel.',
   requiredHeaders: ['nombre', 'correo'],
-  configKeys: ['platform_url', 'deadline_text', 'program_name', 'campos_credenciales'],
+  configKeys: ['platform_url', 'deadline_text', 'program_name', 'campos_credenciales', 'pdf_attachment_id'],
   senderName: 'PUCV',
   statusColumn: 'Reminder Status',
   headerTitle: 'CREDENCIALES PLACEMENT TEST',
@@ -313,12 +313,18 @@ const placementTestTemplate = {
       }
     }
 
+    const pdfId = extras.pdf_attachment_id ? extras.pdf_attachment_id.trim() : '';
+    const attachments = pdfId
+      ? [DriveApp.getFileById(pdfId).getAs('application/pdf')]
+      : [];
+
     return {
       nombre, correo, credentialsList,
       firstName: extractFirstName(nombre, "estudiante"),
       platformUrl: extras.platform_url || this.defaults.platformUrl,
       deadlineText: extras.deadline_text || this.defaults.deadlineText,
-      programName: extras.program_name || this.defaults.programName
+      programName: extras.program_name || this.defaults.programName,
+      attachments
     };
   },
 
