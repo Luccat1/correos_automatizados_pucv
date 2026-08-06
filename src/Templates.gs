@@ -362,6 +362,69 @@ const placementTestTemplate = {
 };
 
 /**
+ * Placement Follow-Up Template
+ * Sends a thank-you email when the "Completado" column is filled,
+ * asking the student to schedule an interview via Google Calendar.
+ * Optional template meant to run on the same data sheet as placement_test.
+ */
+const placementFollowupTemplate = {
+  id: 'placement_followup',
+  name: 'Seguimiento Placement Test',
+  description: 'Envía correo de agradecimiento tras completar el Placement Test e invita a agendar entrevista.',
+  requiredHeaders: ['nombre', 'correo', 'completado'],
+  configKeys: ['calendar_url', 'program_name'],
+  senderName: 'PUCV',
+  statusColumn: 'Estado Seguimiento',
+  headerTitle: 'PLACEMENT TEST COMPLETADO',
+  footerLines: ['Pontificia Universidad Católica de Valparaíso'],
+
+  defaults: {
+    calendarUrl: '',
+    programName: 'Programa Idiomas PUCV'
+  },
+
+  processRow: function(row, headers, rowIndex, extraData) {
+    // Only process rows where "Completado" has any value
+    const completado = safeCell(row, headers['completado']);
+    if (!completado) return null;
+
+    const nombre = requiredCell(row, headers['nombre'], 'Nombre', rowIndex);
+    const correo = requiredCell(row, headers['correo'], 'Correo', rowIndex);
+
+    const extras = extraData ? extraData.configExtras : {};
+
+    const calendarUrl = extras.calendar_url || this.defaults.calendarUrl;
+    if (!calendarUrl) {
+      throw new Error(`Fila ${rowIndex}: No se ha configurado "calendar_url" en la hoja Config. Este campo es obligatorio para el seguimiento.`);
+    }
+
+    return {
+      nombre, correo,
+      firstName: extractFirstName(nombre, 'estudiante'),
+      programName: extras.program_name || this.defaults.programName,
+      calendarUrl: calendarUrl
+    };
+  },
+
+  buildHtml: function(data) {
+    const greeting = data.nombre ? `Estimado/a <strong>${data.firstName}</strong>:` : 'Estimado/a estudiante:';
+    let content = `<p>${greeting}</p>`;
+    content += `<p>Queremos agradecerte por haber completado el <strong>Placement Test</strong> de <strong>${data.programName}</strong>. Tu compromiso con el proceso es muy valorado.</p>`;
+
+    content += `<p>Como siguiente paso, te pedimos que agendes una <strong>entrevista</strong> lo antes posible seleccionando un horario disponible en el siguiente enlace:</p>`;
+
+    content += buildButton('Agendar Entrevista', data.calendarUrl);
+
+    content += buildWarningBox('<strong>Importante:</strong> Te recomendamos agendar tu entrevista a la brevedad, ya que los horarios disponibles son limitados.');
+
+    content += `<p>Si tienes alguna duda o inconveniente para agendar, no dudes en responder a este correo.</p>`;
+    content += `<p>¡Te esperamos!<br>${data.programName}</p>`;
+
+    return content;
+  }
+};
+
+/**
  * Code Delivery Template
  * Prominent display of unique codes (books, tests, etc.).
  */
@@ -818,6 +881,7 @@ registerTemplate(certificateTemplate);
 registerTemplate(confirmationTemplate);
 registerTemplate(paymentReminderTemplate);
 registerTemplate(placementTestTemplate);
+registerTemplate(placementFollowupTemplate);
 registerTemplate(codeDeliveryTemplate);
 registerTemplate(reportDeliveryTemplate);
 registerTemplate(surveyTemplate);

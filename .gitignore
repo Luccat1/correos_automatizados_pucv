@@ -12,3 +12,7 @@ desktop.ini
 *~
 # Added by code-review-graph
 .code-review-graph/
+
+# Agent worktrees
+.claude/worktrees/
+

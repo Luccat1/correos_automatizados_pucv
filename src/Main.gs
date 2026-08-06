@@ -161,7 +161,8 @@ function menuSendTest() {
       subject: `[PRUEBA] ${template.headerTitle}`,
       htmlBody: fullHtml,
       senderName: config.senderName || template.senderName,
-      senderAlias: config.senderAlias || template.senderAlias
+      senderAlias: config.senderAlias || template.senderAlias,
+      attachments: rowData.attachments || []
     });
 
     showAlert('Prueba Enviada', `Se ha enviado un correo de prueba a ${testEmail}`);
@@ -414,7 +415,8 @@ function _executeBatch(asDraft, overrides) {
         subject: (overrides && overrides.subject) || template.headerTitle,
         htmlBody: fullHtml,
         cc: cc,
-        bcc: bcc
+        bcc: bcc,
+        attachments: data.attachments || []
       };
     } catch (e) {
       console.error(`Error en fila ${rowIndex}: ${e.message}`);
