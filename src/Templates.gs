@@ -313,10 +313,22 @@ const placementTestTemplate = {
       }
     }
 
-    const pdfId = extras.pdf_attachment_id ? extras.pdf_attachment_id.trim() : '';
-    const attachments = pdfId
-      ? [DriveApp.getFileById(pdfId).getAs('application/pdf')]
-      : [];
+    let pdfId = extras.pdf_attachment_id ? extras.pdf_attachment_id.trim() : '';
+    if (pdfId) {
+      const urlMatch = pdfId.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (urlMatch) {
+        pdfId = urlMatch[1];
+      }
+    }
+
+    let attachments = [];
+    if (pdfId) {
+      try {
+        attachments = [DriveApp.getFileById(pdfId).getAs('application/pdf')];
+      } catch (e) {
+        throw new Error(`Fila ${rowIndex}: No se pudo obtener el archivo PDF (ID: "${pdfId}"). Verifica que el valor en "pdf_attachment_id" sea correcto y que tengas permisos de lectura en Google Drive. (Detalle: ${e.message})`);
+      }
+    }
 
     return {
       nombre, correo, credentialsList,
