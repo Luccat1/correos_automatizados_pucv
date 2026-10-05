@@ -27,8 +27,8 @@ A Google Apps Script (GAS) system for sending institutional emails at PUCV (Pont
 This project has no package manager or build tool. To deploy:
 
 1. Open a Google Spreadsheet → **Extensiones > Apps Script**
-2. Create three `.gs` files and two `.html` files, copying the source from `src/`:
-   - `Core.gs`, `Templates.gs`, `Main.gs`, `TemplateSelector.html`, `SendDialog.html`
+2. Create three `.gs` files and three `.html` files, copying the source from `src/`:
+   - `Core.gs`, `Templates.gs`, `Main.gs`, `TemplateSelector.html`, `SendDialog.html`, `Dashboard.html`
 3. Reload the spreadsheet — the `onOpen()` trigger creates the `📧 Correos PUCV` menu automatically
 
 To test a change, copy the modified file content into the Apps Script editor and use the menu options:

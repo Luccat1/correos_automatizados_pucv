@@ -2,174 +2,605 @@
 <html>
   <head>
     <meta charset="UTF-8" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
       :root {
+        --navy: #001f3f;
         --primary: #24588d;
         --secondary: #1d71b8;
         --accent: #008cba;
+        --emerald: #10b981;
+        --amber: #f59e0b;
+        --rose: #ef4444;
+        --indigo: #6366f1;
+        --teal: #0d9488;
         --white: #ffffff;
-        --text: #333333;
-        --border: #e0e0e0;
-        --bg: #f8f8f8;
+        --slate-50: #f8fafc;
+        --slate-100: #f1f5f9;
+        --slate-200: #e2e8f0;
+        --slate-300: #cbd5e1;
+        --slate-500: #64748b;
+        --slate-600: #475569;
+        --slate-700: #334155;
+        --slate-800: #1e293b;
+        --slate-900: #0f172a;
       }
-      body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      * {
+        box-sizing: border-box;
         margin: 0;
         padding: 0;
-        color: var(--text);
-        background-color: var(--bg);
       }
-      .container {
-        padding: 20px;
+      body {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        color: var(--slate-800);
+        background-color: var(--slate-50);
+        font-size: 13.5px;
+        line-height: 1.5;
+        max-height: 100vh;
+        overflow-y: auto;
       }
+
+      /* Corporate Header with shimmer */
       .header {
-        background-color: var(--primary);
+        background: linear-gradient(135deg, var(--navy) 0%, var(--primary) 50%, var(--secondary) 100%);
         color: var(--white);
-        padding: 15px 20px;
-        margin-bottom: 20px;
+        padding: 18px 24px;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 4px 14px rgba(0, 31, 63, 0.15);
       }
-      .header h2 {
+      .header::after {
+        content: '';
+        position: absolute;
+        top: -60%;
+        left: -40%;
+        width: 180%;
+        height: 220%;
+        background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
+        pointer-events: none;
+      }
+      .header-title-wrap h2 {
+        font-size: 16.5px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: var(--white);
+        margin: 0 0 2px 0;
+      }
+      .header-title-wrap p {
+        font-size: 10.5px;
+        color: rgba(255, 255, 255, 0.85);
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        font-weight: 600;
         margin: 0;
-        font-size: 18px;
       }
-      .summary {
+      .mode-badge {
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        padding: 4px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(4px);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        transition: all 0.3s ease;
+      }
+
+      .container {
+        padding: 18px 24px;
+      }
+
+      /* Mode Selector Cards (Cuadros de Selección) */
+      .mode-section {
+        margin-bottom: 18px;
+      }
+      .mode-section-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: var(--slate-600);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .mode-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+      }
+      .mode-card {
+        background: var(--white);
+        border: 2px solid var(--slate-200);
+        border-radius: 12px;
+        padding: 12px 8px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+      }
+      .mode-card input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .mode-card:hover {
+        border-color: var(--slate-300);
+        background: var(--slate-50);
+        transform: translateY(-1.5px);
+      }
+      .mode-icon {
+        font-size: 20px;
+        margin-bottom: 4px;
+      }
+      .mode-title {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--slate-800);
+        line-height: 1.2;
+        margin-bottom: 2px;
+      }
+      .mode-desc {
+        font-size: 10px;
+        color: var(--slate-500);
+        line-height: 1.25;
+      }
+
+      /* Selected card styles */
+      .mode-card.selected-send {
+        border-color: var(--secondary);
+        background-color: #f0f7ff;
+        box-shadow: 0 0 0 2px rgba(29, 113, 184, 0.25), 0 4px 10px rgba(29, 113, 184, 0.1);
+      }
+      .mode-card.selected-send .mode-title {
+        color: var(--primary);
+      }
+
+      .mode-card.selected-draft {
+        border-color: var(--indigo);
+        background-color: #eef2ff;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25), 0 4px 10px rgba(99, 102, 241, 0.1);
+      }
+      .mode-card.selected-draft .mode-title {
+        color: var(--indigo);
+      }
+
+      .mode-card.selected-test {
+        border-color: var(--teal);
+        background-color: #f0fdfa;
+        box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.25), 0 4px 10px rgba(13, 148, 136, 0.1);
+      }
+      .mode-card.selected-test .mode-title {
+        color: #0f766e;
+      }
+
+      /* Bento Grid Preflight Stats */
+      .bento-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .bento-card {
+        background: var(--white);
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid var(--slate-200);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .bento-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--slate-600);
+        margin-bottom: 2px;
+      }
+      .bento-value {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--slate-900);
+        line-height: 1.2;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .bento-sub {
+        font-size: 10.5px;
+        color: var(--slate-500);
+        margin-top: 2px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .bento-card.success-accent { border-top: 3px solid var(--emerald); }
+      .bento-card.success-accent .bento-value { color: var(--emerald); }
+      .bento-card.primary-accent { border-top: 3px solid var(--secondary); }
+      .bento-card.primary-accent .bento-value { color: var(--secondary); }
+      .bento-card.navy-accent { border-top: 3px solid var(--navy); }
+
+      /* Test Email Input Container */
+      #test-email-container {
+        display: none;
+        background: #f0fdfa;
+        border: 1.5px solid #99f6e4;
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 16px;
+      }
+
+      /* Batch Options (Limit) */
+      .batch-options-card {
+        background: var(--white);
+        border: 1px dashed var(--slate-300);
+        border-radius: 10px;
+        padding: 10px 14px;
+        margin-bottom: 16px;
+      }
+      .toggle-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--slate-700);
+        cursor: pointer;
+      }
+      .toggle-label input[type="checkbox"] {
+        accent-color: var(--secondary);
+        width: 15px;
+        height: 15px;
+        cursor: pointer;
+      }
+
+      /* Large Batch Warning */
+      #batch-warning {
+        background: #fff1f2;
+        border: 1px solid #fecdd3;
+        border-left: 4px solid var(--rose);
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 16px;
+        animation: fadeIn 0.3s ease-in;
+      }
+      .warning-header {
+        color: #9f1239;
+        font-weight: 700;
         font-size: 13px;
-        margin-bottom: 20px;
-        color: #666;
-        border-bottom: 1px solid var(--border);
-        padding-bottom: 10px;
+        margin-bottom: 3px;
       }
+      .warning-text {
+        font-size: 12px;
+        color: #881337;
+        margin-bottom: 8px;
+        line-height: 1.4;
+      }
+      .warning-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: #4c0519;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      /* Form Fields */
       .form-group {
-        margin-bottom: 15px;
+        margin-bottom: 14px;
       }
       .form-group label {
         display: block;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: var(--slate-600);
         margin-bottom: 5px;
-        font-weight: bold;
-        font-size: 14px;
       }
       .form-group input[type="text"],
+      .form-group input[type="email"],
       .form-group textarea {
         width: 100%;
-        padding: 8px 10px;
-        border: 1px solid var(--border);
-        border-radius: 4px;
-        box-sizing: border-box;
-        font-size: 14px;
+        padding: 9px 12px;
+        border: 1.5px solid var(--slate-200);
+        border-radius: 8px;
+        background: var(--white);
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 13px;
+        color: var(--slate-900);
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      .form-group input[type="text"]:focus,
+      .form-group input[type="email"]:focus,
+      .form-group textarea:focus {
+        outline: none;
+        border-color: var(--secondary);
+        box-shadow: 0 0 0 3px rgba(29, 113, 184, 0.15);
       }
       .form-group textarea {
-        height: 80px;
+        height: 70px;
         resize: vertical;
+        line-height: 1.45;
       }
+      .grid-2col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      /* Footer Buttons */
       .footer {
-        margin-top: 25px;
-        text-align: right;
+        margin-top: 20px;
+        padding-top: 14px;
+        border-top: 1px solid var(--slate-200);
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 10px;
       }
       .btn {
         padding: 10px 20px;
-        border: none;
-        border-radius: 4px;
+        border-radius: 8px;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 13px;
+        font-weight: 700;
         cursor: pointer;
-        font-weight: bold;
-        font-size: 14px;
-        margin-left: 10px;
-      }
-      .btn-primary {
-        background-color: var(--primary);
-        color: var(--white);
-      }
-      .btn-primary:hover {
-        background-color: var(--secondary);
+        transition: all 0.2s ease;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
       }
       .btn-secondary {
-        background-color: #ccc;
-        color: var(--text);
+        background: var(--slate-100);
+        color: var(--slate-600);
+        border: 1px solid var(--slate-200);
       }
       .btn-secondary:hover {
-        background-color: #bbb;
+        background: var(--slate-200);
+        color: var(--slate-800);
       }
-      .loader {
+      .btn-primary {
+        background: linear-gradient(135deg, var(--navy) 0%, var(--primary) 50%, var(--secondary) 100%);
+        color: var(--white);
+        box-shadow: 0 4px 12px rgba(36, 88, 141, 0.25);
+      }
+      .btn-primary:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(36, 88, 141, 0.35);
+      }
+      .btn-primary:disabled {
+        background: var(--slate-300);
+        color: var(--slate-500);
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+      }
+
+      /* Loading State */
+      .loader-container {
         display: none;
-        margin-top: 10px;
-        font-style: italic;
-        color: var(--primary);
+        margin-top: 14px;
+        padding: 10px;
+        background: rgba(36, 88, 141, 0.05);
+        border-radius: 8px;
+        text-align: center;
       }
-      #batch-warning {
-        animation: fadeIn 0.3s ease-in;
+      .spinner {
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(36, 88, 141, 0.2);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        vertical-align: middle;
+        margin-right: 8px;
+      }
+      .loader-text {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--primary);
+        display: inline-block;
+        vertical-align: middle;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
       }
       @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
       }
     </style>
   </head>
   <body>
+    <!-- Corporate Header -->
     <div class="header">
-      <h2><?= asDraft ? '📝 Preparar Borradores' : '📤 Enviar Correos' ?></h2>
+      <div class="header-title-wrap">
+        <p>Sistema Unificado PUCV</p>
+        <h2>Gestión de Envío de Correos</h2>
+      </div>
+      <span class="mode-badge" id="header-mode-badge">Preparando</span>
     </div>
 
     <div class="container">
-      <div class="summary">
-        <strong>Plantilla:</strong> <?= templateName ?><br />
-        <strong>Fuente:</strong> <?= dataSheetName ?> (<?= rowCount ?> filas totales)<br />
-        <strong>Alias remitente:</strong> <span id="sender-alias"><?= senderAlias || 'cuenta principal' ?></span><br />
-        <strong>Filas a procesar:</strong> <span id="processable-count"><em>calculando...</em></span><br />
-        <strong>Cuota disponible:</strong> <span id="quota-count"><em>consultando...</em></span> correos restantes
+      <!-- Cuadros de Selección de Modo -->
+      <div class="mode-section">
+        <div class="mode-section-title">
+          <span>🎯 Selecciona la Acción a Realizar</span>
+        </div>
+        <div class="mode-grid">
+          <!-- Opción 1: Envío Masivo -->
+          <div class="mode-card" id="mode-card-send" onclick="selectMode('send')">
+            <input type="radio" name="sendModeRadio" value="send" />
+            <div class="mode-icon">🚀</div>
+            <div class="mode-title">Envío Real</div>
+            <div class="mode-desc">Enviar a los destinatarios</div>
+          </div>
+
+          <!-- Opción 2: Borradores -->
+          <div class="mode-card" id="mode-card-draft" onclick="selectMode('draft')">
+            <input type="radio" name="sendModeRadio" value="draft" />
+            <div class="mode-icon">📝</div>
+            <div class="mode-title">Borradores</div>
+            <div class="mode-desc">Crear en Gmail sin enviar</div>
+          </div>
+
+          <!-- Opción 3: Prueba -->
+          <div class="mode-card" id="mode-card-test" onclick="selectMode('test')">
+            <input type="radio" name="sendModeRadio" value="test" />
+            <div class="mode-icon">🧪</div>
+            <div class="mode-title">Prueba</div>
+            <div class="mode-desc">1 correo con datos muestra</div>
+          </div>
+        </div>
       </div>
 
-      <div id="batch-warning" style="display:none; background-color: #ffebee; border: 2px solid #e53935; border-radius: 4px; padding: 12px 15px; margin-bottom: 20px;">
-        <strong style="color: #c62828;">Advertencia: Lote grande</strong>
-        <p style="margin: 8px 0; font-size: 13px; color: #b71c1c;">
-          Se procesaran <strong><span id="warning-count">--</span></strong> filas, lo cual supera el limite de <strong><span id="warning-threshold">--</span></strong>.
+      <!-- Bento Grid Preflight Stats -->
+      <div class="bento-grid">
+        <div class="bento-card navy-accent">
+          <div class="bento-label">📋 Plantilla</div>
+          <div class="bento-value" style="font-size: 13.5px;"><?= templateName ?></div>
+          <div class="bento-sub"><?= dataSheetName ?></div>
+        </div>
+
+        <div class="bento-card primary-accent">
+          <div class="bento-label">🎯 A Procesar</div>
+          <div class="bento-value"><span id="processable-count">...</span></div>
+          <div class="bento-sub">de <?= rowCount ?> filas totales</div>
+        </div>
+
+        <div class="bento-card success-accent">
+          <div class="bento-label">⚡ Cuota Gmail</div>
+          <div class="bento-value"><span id="quota-count">...</span></div>
+          <div class="bento-sub">restantes hoy</div>
+        </div>
+
+        <div class="bento-card">
+          <div class="bento-label">👤 Remitente</div>
+          <div class="bento-value" style="font-size: 12px;"><span id="sender-alias"><?= senderAlias || 'Cuenta principal' ?></span></div>
+          <div class="bento-sub">Alias institucional</div>
+        </div>
+      </div>
+
+      <!-- Test Email Destination Field (Only shown in Test mode) -->
+      <div id="test-email-container">
+        <div class="form-group" style="margin-bottom: 4px;">
+          <label for="testEmail" style="color: #0f766e;">✉️ Enviar Correo de Prueba a:</label>
+          <input
+            type="email"
+            id="testEmail"
+            name="testEmail"
+            placeholder="tu.correo@pucv.cl"
+          />
+        </div>
+        <small style="font-size: 11px; color: #0d9488;">
+          Se generará un correo de prueba completo con el primer registro procesable de la hoja de datos.
+        </small>
+      </div>
+
+      <!-- Batch Limit Option (Shown in Send and Draft modes) -->
+      <div id="batch-options-container" class="batch-options-card">
+        <label class="toggle-label">
+          <input type="checkbox" id="enableBatchLimit" onchange="toggleBatchLimit()" />
+          <span>Limitar cantidad de filas a procesar en esta ejecución</span>
+        </label>
+        <div id="batch-limit-input-wrap" style="display: none; margin-top: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12px; color: var(--slate-600);">Procesar máximo:</span>
+            <input
+              type="number"
+              id="batchLimit"
+              min="1"
+              max="500"
+              value="5"
+              style="width: 70px; padding: 5px 8px; border-radius: 6px; border: 1.5px solid var(--slate-200); font-weight: 700; text-align: center;"
+            />
+            <span style="font-size: 12px; color: var(--slate-600);">filas pendientes (útil para pruebas de lote)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Large Batch Warning -->
+      <div id="batch-warning" style="display: none;">
+        <div class="warning-header">
+          <span>⚠️ Advertencia de Lote Masivo</span>
+        </div>
+        <p class="warning-text">
+          Se procesarán <strong><span id="warning-count">--</span></strong> filas, lo cual supera el límite de <strong><span id="warning-threshold">--</span></strong> registros.
         </p>
-        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
-          <input type="checkbox" id="confirm-large-batch" />
-          Confirmo que deseo procesar este lote grande
+        <label class="warning-label">
+          <input type="checkbox" id="confirm-large-batch" onchange="checkSubmitDisabledState()" />
+          <span>Confirmo que deseo procesar este lote grande</span>
         </label>
       </div>
 
+      <!-- Main Customization Form -->
       <form id="sendForm">
         <div class="form-group">
-          <label for="subject">Asunto:</label>
+          <label for="subject">Asunto del Correo</label>
           <input
             type="text"
             id="subject"
             name="subject"
             value="<?= subject ?>"
+            placeholder="Ingrese el asunto del correo institucional..."
             required
           />
         </div>
 
         <div class="form-group">
-          <label for="extraNote">Nota Adicional:</label>
+          <label for="extraNote">Nota Adicional Destacada (Opcional)</label>
           <textarea
             id="extraNote"
             name="extraNote"
-            placeholder="Opcional: mensaje que aparecerá en el recuadro amarillo..."
-          >
-<?= extraNote ?></textarea
-          >
+            placeholder="Mensaje institucional que aparecerá en el recuadro destacado..."
+          ><?= extraNote ?></textarea>
         </div>
 
-        <div class="form-group">
-          <label for="cc">CC (Copia):</label>
-          <input
-            type="text"
-            id="cc"
-            name="cc"
-            value="<?= cc ?>"
-            placeholder="ejemplo@pucv.cl, otro@pucv.cl"
-          />
+        <div class="grid-2col">
+          <div class="form-group">
+            <label for="cc">CC (Copia)</label>
+            <input
+              type="text"
+              id="cc"
+              name="cc"
+              value="<?= cc ?>"
+              placeholder="ejemplo@pucv.cl"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="bcc">BCC (Copia Oculta)</label>
+            <input
+              type="text"
+              id="bcc"
+              name="bcc"
+              value="<?= bcc ?>"
+              placeholder="copia.oculta@pucv.cl"
+            />
+          </div>
         </div>
 
-        <div class="form-group">
-          <label for="bcc">BCC (Copia Oculta):</label>
-          <input type="text" id="bcc" name="bcc" value="<?= bcc ?>" />
+        <div id="loader" class="loader-container">
+          <span class="spinner"></span>
+          <span class="loader-text" id="loader-status">Procesando... por favor espere sin cerrar la ventana.</span>
         </div>
-
-        <input type="hidden" name="asDraft" value="<?= asDraft ?>" />
-
-        <div id="loader" class="loader">Procesando... por favor espere.</div>
 
         <div class="footer">
           <button
@@ -180,55 +611,139 @@
             Cancelar
           </button>
           <button type="submit" class="btn btn-primary" id="submitBtn">
-            <?= asDraft ? 'Crear Borradores' : 'Iniciar Envío' ?>
+            Continuar
           </button>
         </div>
       </form>
     </div>
 
     <script>
+      var currentMode = '<?= initialMode || "send" ?>';
       var preflightData = null;
       var batchWarningActive = false;
 
-      // Fetch pre-flight data on dialog load (ROBUST-04, UX-02)
-      google.script.run
-        .withSuccessHandler(function(data) {
-          if (!data) return;
-          preflightData = data;
+      // Initialize on load
+      window.onload = function() {
+        selectMode(currentMode);
+        fetchPreflight();
+      };
 
-          // Update quota display
-          document.getElementById('quota-count').textContent = data.quota;
+      // Mode Selection Handler
+      function selectMode(mode) {
+        currentMode = mode;
 
-          // Update processable row count
-          document.getElementById('processable-count').textContent = data.processableRows + ' de ' + data.totalRows;
-
-          // Update sender alias if server has more info
-          if (data.senderAlias) {
-            document.getElementById('sender-alias').textContent = data.senderAlias;
+        // Visual selection on cards
+        ['send', 'draft', 'test'].forEach(function(m) {
+          var card = document.getElementById('mode-card-' + m);
+          if (card) {
+            card.classList.remove('selected-' + m);
+            var radio = card.querySelector('input[type="radio"]');
+            if (radio) radio.checked = (m === mode);
           }
+        });
 
-          // Show batch warning if processable rows exceed threshold (ROBUST-05)
-          if (data.processableRows > data.batchThreshold) {
-            batchWarningActive = true;
-            document.getElementById('warning-count').textContent = data.processableRows;
-            document.getElementById('warning-threshold').textContent = data.batchThreshold;
-            document.getElementById('batch-warning').style.display = 'block';
-            document.getElementById('submitBtn').disabled = true;
-          }
-        })
-        .withFailureHandler(function(err) {
-          document.getElementById('quota-count').textContent = 'error';
-          document.getElementById('processable-count').textContent = 'error';
-          console.error('getPreflightData failed:', err);
-        })
-        .getPreflightData();
-
-      // Large-batch checkbox enables/disables submit (ROBUST-05)
-      document.getElementById('confirm-large-batch').addEventListener('change', function() {
-        if (batchWarningActive) {
-          document.getElementById('submitBtn').disabled = !this.checked;
+        var activeCard = document.getElementById('mode-card-' + mode);
+        if (activeCard) {
+          activeCard.classList.add('selected-' + mode);
         }
-      });
+
+        // Toggle UI sections according to mode
+        var testContainer = document.getElementById('test-email-container');
+        var batchOptions = document.getElementById('batch-options-container');
+        var submitBtn = document.getElementById('submitBtn');
+        var modeBadge = document.getElementById('header-mode-badge');
+        var batchWarning = document.getElementById('batch-warning');
+
+        if (mode === 'test') {
+          testContainer.style.display = 'block';
+          batchOptions.style.display = 'none';
+          if (batchWarning) batchWarning.style.display = 'none';
+          submitBtn.innerHTML = '🧪 Enviar Correo de Prueba';
+          modeBadge.textContent = 'Modo Prueba';
+          modeBadge.style.background = 'rgba(13, 148, 136, 0.35)';
+        } else if (mode === 'draft') {
+          testContainer.style.display = 'none';
+          batchOptions.style.display = 'block';
+          submitBtn.innerHTML = '📝 Crear Borradores en Gmail';
+          modeBadge.textContent = 'Modo Borrador';
+          modeBadge.style.background = 'rgba(99, 102, 241, 0.35)';
+          updateBatchWarningVisibility();
+        } else {
+          // send
+          testContainer.style.display = 'none';
+          batchOptions.style.display = 'block';
+          submitBtn.innerHTML = '🚀 Iniciar Envío Masivo';
+          modeBadge.textContent = 'Modo Envío Real';
+          modeBadge.style.background = 'rgba(29, 113, 184, 0.35)';
+          updateBatchWarningVisibility();
+        }
+
+        checkSubmitDisabledState();
+      }
+
+      function toggleBatchLimit() {
+        var checkbox = document.getElementById('enableBatchLimit');
+        var wrap = document.getElementById('batch-limit-input-wrap');
+        wrap.style.display = checkbox.checked ? 'block' : 'none';
+      }
+
+      function updateBatchWarningVisibility() {
+        var warningDiv = document.getElementById('batch-warning');
+        if (!warningDiv) return;
+
+        if (currentMode === 'test') {
+          warningDiv.style.display = 'none';
+        } else if (batchWarningActive) {
+          warningDiv.style.display = 'block';
+        }
+      }
+
+      function checkSubmitDisabledState() {
+        var submitBtn = document.getElementById('submitBtn');
+        if (currentMode === 'test') {
+          submitBtn.disabled = false;
+        } else if (batchWarningActive) {
+          var confirmBox = document.getElementById('confirm-large-batch');
+          submitBtn.disabled = !(confirmBox && confirmBox.checked);
+        } else {
+          submitBtn.disabled = false;
+        }
+      }
+
+      function fetchPreflight() {
+        google.script.run
+          .withSuccessHandler(function(data) {
+            if (!data) return;
+            preflightData = data;
+
+            document.getElementById('quota-count').textContent = data.quota;
+            document.getElementById('processable-count').textContent = data.processableRows;
+
+            if (data.senderAlias) {
+              document.getElementById('sender-alias').textContent = data.senderAlias;
+            }
+
+            // Fill test email default if present
+            if (data.userEmail && !document.getElementById('testEmail').value) {
+              document.getElementById('testEmail').value = data.userEmail;
+            }
+
+            // Evaluate large batch threshold
+            if (data.processableRows > data.batchThreshold) {
+              batchWarningActive = true;
+              document.getElementById('warning-count').textContent = data.processableRows;
+              document.getElementById('warning-threshold').textContent = data.batchThreshold;
+              updateBatchWarningVisibility();
+              checkSubmitDisabledState();
+            }
+          })
+          .withFailureHandler(function(err) {
+            document.getElementById('quota-count').textContent = 'Error';
+            document.getElementById('processable-count').textContent = 'Error';
+            console.error('getPreflightData failed:', err);
+          })
+          .getPreflightData();
+      }
 
       // Form submission
       document.getElementById('sendForm').addEventListener('submit', function(e) {
@@ -236,16 +751,35 @@
 
         var submitBtn = document.getElementById('submitBtn');
         var loader = document.getElementById('loader');
+        var statusLabel = document.getElementById('loader-status');
 
         submitBtn.disabled = true;
         loader.style.display = 'block';
 
+        if (currentMode === 'test') {
+          statusLabel.textContent = 'Enviando correo de prueba...';
+        } else if (currentMode === 'draft') {
+          statusLabel.textContent = 'Generando borradores en Gmail...';
+        } else {
+          statusLabel.textContent = 'Enviando correos masivos... por favor espere.';
+        }
+
+        var batchLimitValue = null;
+        if (currentMode !== 'test') {
+          var limitBox = document.getElementById('enableBatchLimit');
+          if (limitBox && limitBox.checked) {
+            batchLimitValue = parseInt(document.getElementById('batchLimit').value) || null;
+          }
+        }
+
         var formData = {
+          mode: currentMode, // 'send', 'draft', 'test'
           subject: document.getElementById('subject').value,
           extraNote: document.getElementById('extraNote').value,
           cc: document.getElementById('cc').value,
           bcc: document.getElementById('bcc').value,
-          asDraft: document.querySelector('input[name="asDraft"]').value === 'true'
+          testEmail: document.getElementById('testEmail') ? document.getElementById('testEmail').value.trim() : '',
+          batchLimit: batchLimitValue
         };
 
         google.script.run
@@ -253,7 +787,7 @@
             google.script.host.close();
           })
           .withFailureHandler(function(err) {
-            alert('Error: ' + err);
+            alert('Error en la operación: ' + err);
             submitBtn.disabled = false;
             loader.style.display = 'none';
           })

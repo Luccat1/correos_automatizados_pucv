@@ -27,8 +27,9 @@ El sistema se basa en una estructura de cinco archivos principales que deben cop
     *   Carga automática de configuración desde la hoja "Config".
     *   Orquestación de envíos masivos y creación de borradores.
 
-4.  **Archivos HTML de UI:** Vistas para los diálogos en Google Sheets.
-    *   **`SendDialog.html`:** Interfaz para personalizar asunto, copia y notas antes de enviar.
+4.  **Archivos HTML de UI:** Vistas interactivas para Google Sheets con tipografía *Plus Jakarta Sans* y diseño Bento Grid.
+    *   **`Dashboard.html`:** Panel lateral (Sidebar) con métricas en tiempo real, cuota de Gmail, tasa de avance y desglose de envíos.
+    *   **`SendDialog.html`:** Interfaz para pre-visualizar cuota y filas a procesar, personalizando asunto, copia y notas antes de enviar.
     *   **`TemplateSelector.html`:** Galería visual para la selección y configuración de nuevas plantillas.
 
 ## 📋 Plantillas Disponibles

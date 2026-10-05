@@ -1,0 +1,574 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --navy: #001f3f;
+        --primary: #24588d;
+        --secondary: #1d71b8;
+        --accent: #008cba;
+        --emerald: #10b981;
+        --amber: #f59e0b;
+        --rose: #ef4444;
+        --indigo: #6366f1;
+        --white: #ffffff;
+        --slate-50: #f8fafc;
+        --slate-100: #f1f5f9;
+        --slate-200: #e2e8f0;
+        --slate-300: #cbd5e1;
+        --slate-400: #94a3b8;
+        --slate-500: #64748b;
+        --slate-600: #475569;
+        --slate-700: #334155;
+        --slate-800: #1e293b;
+        --slate-900: #0f172a;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background-color: var(--slate-50);
+        color: var(--slate-800);
+        padding: 16px;
+        font-size: 13.5px;
+        line-height: 1.5;
+        overflow-x: hidden;
+      }
+
+      /* Corporate Header */
+      .header {
+        background: linear-gradient(135deg, var(--navy) 0%, var(--primary) 50%, var(--secondary) 100%);
+        color: var(--white);
+        padding: 22px 18px;
+        border-radius: 16px;
+        margin-bottom: 18px;
+        text-align: center;
+        box-shadow: 0 10px 20px rgba(0, 31, 63, 0.15);
+        position: relative;
+        overflow: hidden;
+      }
+      .header::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
+        pointer-events: none;
+      }
+      .header h2 {
+        font-size: 19px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        letter-spacing: -0.3px;
+        color: var(--white);
+      }
+      .header p {
+        font-size: 10.5px;
+        opacity: 0.85;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+      }
+
+      /* Section Titles */
+      .section-title {
+        font-size: 11.5px;
+        font-weight: 700;
+        color: var(--slate-900);
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin: 20px 0 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .section-title::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background-color: var(--slate-200);
+      }
+
+      /* Bento Grid */
+      .bento-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .stat-card {
+        background: var(--white);
+        padding: 14px 10px;
+        border-radius: 14px;
+        text-align: center;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+        border: 1px solid var(--slate-200);
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07);
+      }
+      .stat-number {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--slate-900);
+        margin-bottom: 2px;
+        line-height: 1.1;
+      }
+      .stat-label {
+        font-size: 10px;
+        color: var(--slate-500);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      /* Card Border Themes */
+      .stat-card.total { border-top: 3.5px solid var(--navy); }
+      .stat-card.rate { border-top: 3.5px solid var(--accent); }
+      .stat-card.rate .stat-number { color: var(--accent); }
+      .stat-card.sent { border-top: 3.5px solid var(--emerald); }
+      .stat-card.sent .stat-number { color: var(--emerald); }
+      .stat-card.draft { border-top: 3.5px solid var(--indigo); }
+      .stat-card.draft .stat-number { color: var(--indigo); }
+      .stat-card.pending { border-top: 3.5px solid var(--amber); }
+      .stat-card.pending .stat-number { color: var(--amber); }
+      .stat-card.error { border-top: 3.5px solid var(--rose); }
+      .stat-card.error .stat-number { color: var(--rose); }
+
+      /* Info Box for Template */
+      .campaign-box {
+        background: var(--white);
+        border: 1px solid var(--slate-200);
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+      }
+      .campaign-info h4 {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: var(--navy);
+        margin-bottom: 2px;
+      }
+      .campaign-info p {
+        font-size: 11px;
+        color: var(--slate-500);
+      }
+      .badge-chip {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        background: #e0f2fe;
+        color: #0369a1;
+        padding: 3px 8px;
+        border-radius: 999px;
+        border: 1px solid #bae6fd;
+      }
+
+      /* Quota Card */
+      .quota-card {
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border: 1px solid #bbf7d0;
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .quota-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #166534;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .quota-number {
+        font-size: 18px;
+        font-weight: 700;
+        color: #15803d;
+      }
+
+      /* Distribution Bar */
+      .progress-container {
+        background: var(--white);
+        border: 1px solid var(--slate-200);
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+      }
+      .progress-bar-wrap {
+        height: 10px;
+        background-color: var(--slate-200);
+        border-radius: 999px;
+        overflow: hidden;
+        margin: 8px 0 12px;
+        display: flex;
+      }
+      .progress-segment {
+        height: 100%;
+        transition: width 0.4s ease;
+      }
+      .segment-sent { background-color: var(--emerald); }
+      .segment-draft { background-color: var(--indigo); }
+      .segment-pending { background-color: var(--amber); }
+      .segment-error { background-color: var(--rose); }
+
+      .legend-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        font-size: 11px;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--slate-600);
+      }
+      .legend-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+
+      /* Recent Activity List */
+      .activity-card {
+        background: var(--white);
+        border: 1px solid var(--slate-200);
+        border-radius: 12px;
+        padding: 12px;
+        margin-bottom: 8px;
+        font-size: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+      }
+      .activity-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3px;
+        font-weight: 600;
+        color: var(--slate-900);
+      }
+      .activity-meta {
+        font-size: 10.5px;
+        color: var(--slate-500);
+        display: flex;
+        justify-content: space-between;
+      }
+
+      /* Action Buttons */
+      .action-btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 14px;
+      }
+      .btn {
+        width: 100%;
+        padding: 11px 16px;
+        border-radius: 10px;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--navy) 0%, var(--primary) 50%, var(--secondary) 100%);
+        color: var(--white);
+        box-shadow: 0 4px 12px rgba(36, 88, 141, 0.25);
+      }
+      .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(36, 88, 141, 0.35);
+      }
+      .btn-refresh {
+        background: var(--slate-100);
+        color: var(--slate-700);
+        border: 1px solid var(--slate-200);
+        margin-top: 6px;
+      }
+      .btn-refresh:hover {
+        background: var(--slate-200);
+        color: var(--slate-900);
+      }
+      .btn-action {
+        background: var(--white);
+        color: var(--navy);
+        border: 1.5px solid var(--slate-200);
+      }
+      .btn-action:hover {
+        border-color: var(--secondary);
+        background: #f0f7ff;
+      }
+
+      /* Loading Overlay */
+      #loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid rgba(36, 88, 141, 0.15);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-bottom: 12px;
+      }
+      .loading-msg {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--primary);
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+      <div class="spinner"></div>
+      <div id="loading-text" class="loading-msg">Cargando métricas...</div>
+    </div>
+
+    <!-- Corporate Header -->
+    <div class="header">
+      <p>Pontificia Universidad Católica de Valparaíso</p>
+      <h2>📊 Panel de Control</h2>
+      <p id="header-update-time">Cargando datos...</p>
+    </div>
+
+    <!-- Active Campaign Card -->
+    <div class="campaign-box">
+      <div class="campaign-info">
+        <h4 id="camp-template-name">Plantilla activa</h4>
+        <p id="camp-sheet-name">Hoja: --</p>
+      </div>
+      <span class="badge-chip" id="camp-template-id">ID</span>
+    </div>
+
+    <!-- Gmail Quota Card -->
+    <div class="quota-card">
+      <div>
+        <div class="quota-label">⚡ Cuota Gmail Restante</div>
+        <div style="font-size: 11px; color: #166534;">Límite diario de envío</div>
+      </div>
+      <div class="quota-number" id="stat-quota">--</div>
+    </div>
+
+    <!-- Section: Resumen de Envíos -->
+    <div class="section-title">📈 Estado de la Lista</div>
+
+    <!-- Bento Grid -->
+    <div class="bento-grid">
+      <div class="stat-card total">
+        <div class="stat-number" id="stat-total">0</div>
+        <div class="stat-label">Total Filas</div>
+      </div>
+      <div class="stat-card rate">
+        <div class="stat-number" id="stat-rate">0%</div>
+        <div class="stat-label">Completado</div>
+      </div>
+      <div class="stat-card sent">
+        <div class="stat-number" id="stat-sent">0</div>
+        <div class="stat-label">Enviados</div>
+      </div>
+      <div class="stat-card draft">
+        <div class="stat-number" id="stat-draft">0</div>
+        <div class="stat-label">Borradores</div>
+      </div>
+      <div class="stat-card pending">
+        <div class="stat-number" id="stat-pending">0</div>
+        <div class="stat-label">Pendientes</div>
+      </div>
+      <div class="stat-card error">
+        <div class="stat-number" id="stat-error">0</div>
+        <div class="stat-label">Errores</div>
+      </div>
+    </div>
+
+    <!-- Distribution Bar Card -->
+    <div class="progress-container">
+      <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--slate-600);">
+        <span>Distribución</span>
+        <span id="stat-summary-pct">0% procesado</span>
+      </div>
+      <div class="progress-bar-wrap">
+        <div id="bar-sent" class="progress-segment segment-sent" style="width: 0%;"></div>
+        <div id="bar-draft" class="progress-segment segment-draft" style="width: 0%;"></div>
+        <div id="bar-pending" class="progress-segment segment-pending" style="width: 0%;"></div>
+        <div id="bar-error" class="progress-segment segment-error" style="width: 0%;"></div>
+      </div>
+      <div class="legend-grid">
+        <div class="legend-item"><span class="legend-dot segment-sent"></span> Enviados (<span id="legend-sent">0</span>)</div>
+        <div class="legend-item"><span class="legend-dot segment-draft"></span> Borradores (<span id="legend-draft">0</span>)</div>
+        <div class="legend-item"><span class="legend-dot segment-pending"></span> Pendientes (<span id="legend-pending">0</span>)</div>
+        <div class="legend-item"><span class="legend-dot segment-error"></span> Errores (<span id="legend-error">0</span>)</div>
+      </div>
+    </div>
+
+    <!-- Section: Actividad Reciente -->
+    <div class="section-title">🕒 Últimas Ejecuciones</div>
+    <div id="recent-logs-container">
+      <p style="color: var(--slate-500); font-size: 12px; text-align: center; padding: 8px;">Sin registros recientes</p>
+    </div>
+
+    <!-- Section: Acciones Rápidas -->
+    <div class="section-title">⚡ Acciones Rápidas</div>
+    <div class="action-btn-group">
+      <button class="btn btn-primary" onclick="runServerAction('menuSendEmails', 'Gestor de Envío')">
+        📤 Enviar / Preparar Correos
+      </button>
+      <button class="btn btn-action" onclick="runServerAction('menuSendTest', 'Prueba')">
+        🧪 Enviar Correo de Prueba
+      </button>
+      <button class="btn btn-action" onclick="runServerAction('menuPreview', 'Vista Previa')">
+        👁 Abrir Vista Previa
+      </button>
+      <button class="btn btn-refresh" onclick="refreshDashboard()">
+        🔄 Refrescar Métricas
+      </button>
+    </div>
+
+    <script>
+      // Run initial metric fetch
+      window.onload = function() {
+        refreshDashboard();
+      };
+
+      function refreshDashboard() {
+        showLoading('Actualizando métricas...');
+        google.script.run
+          .withSuccessHandler(function(stats) {
+            updateDashboardUI(stats);
+            hideLoading();
+          })
+          .withFailureHandler(function(err) {
+            hideLoading();
+            alert('Error al obtener estadísticas: ' + err.message);
+          })
+          .getDashboardStats();
+      }
+
+      function updateDashboardUI(stats) {
+        if (!stats) return;
+
+        if (stats.error) {
+          document.getElementById('camp-template-name').innerText = 'Aviso';
+          document.getElementById('camp-sheet-name').innerText = stats.error;
+          document.getElementById('camp-template-id').innerText = 'INFO';
+          document.getElementById('stat-quota').innerText = stats.quota !== undefined ? stats.quota : '--';
+          return;
+        }
+
+        // Header and Campaign
+        document.getElementById('header-update-time').innerText = 'Actualizado: ' + (stats.lastUpdate || 'Ahora');
+        document.getElementById('camp-template-name').innerText = stats.templateName || 'Plantilla activa';
+        document.getElementById('camp-sheet-name').innerText = 'Hoja: ' + (stats.dataSheetName || '--');
+        document.getElementById('camp-template-id').innerText = stats.templateId || '--';
+        document.getElementById('stat-quota').innerText = stats.quota;
+
+        // Bento Grid KPIs
+        document.getElementById('stat-total').innerText = stats.totalRows;
+        document.getElementById('stat-rate').innerText = stats.progressPct + '%';
+        document.getElementById('stat-sent').innerText = stats.sentCount;
+        document.getElementById('stat-draft').innerText = stats.draftCount;
+        document.getElementById('stat-pending').innerText = stats.pendingCount;
+        document.getElementById('stat-error').innerText = stats.errorCount;
+
+        // Distribution Bar
+        const total = stats.totalRows || 1;
+        const sentPct = Math.round((stats.sentCount / total) * 100);
+        const draftPct = Math.round((stats.draftCount / total) * 100);
+        const errorPct = Math.round((stats.errorCount / total) * 100);
+        const pendingPct = Math.max(0, 100 - sentPct - draftPct - errorPct);
+
+        document.getElementById('bar-sent').style.width = sentPct + '%';
+        document.getElementById('bar-draft').style.width = draftPct + '%';
+        document.getElementById('bar-pending').style.width = pendingPct + '%';
+        document.getElementById('bar-error').style.width = errorPct + '%';
+
+        document.getElementById('stat-summary-pct').innerText = stats.progressPct + '% procesado';
+        document.getElementById('legend-sent').innerText = stats.sentCount;
+        document.getElementById('legend-draft').innerText = stats.draftCount;
+        document.getElementById('legend-pending').innerText = stats.pendingCount;
+        document.getElementById('legend-error').innerText = stats.errorCount;
+
+        // Recent Logs
+        const logsContainer = document.getElementById('recent-logs-container');
+        if (stats.recentLogs && stats.recentLogs.length > 0) {
+          let html = '';
+          stats.recentLogs.forEach(function(l) {
+            const badge = l.isDraft ? '📝 Borrador' : '🚀 Envío';
+            html += `
+              <div class="activity-card">
+                <div class="activity-header">
+                  <span>${l.templateName}</span>
+                  <span style="font-size: 10px; color: var(--secondary);">${badge}</span>
+                </div>
+                <div class="activity-meta">
+                  <span>${l.timestamp}</span>
+                  <span><strong>${l.sent}</strong> enviados | <strong>${l.errors}</strong> errores</span>
+                </div>
+              </div>
+            `;
+          });
+          logsContainer.innerHTML = html;
+        } else {
+          logsContainer.innerHTML = '<p style="color: var(--slate-500); font-size: 12px; text-align: center; padding: 6px;">Sin registros recientes en hoja "Log"</p>';
+        }
+      }
+
+      function runServerAction(funcName, label) {
+        showLoading('Abriendo ' + label + '...');
+        google.script.run
+          .withSuccessHandler(function() {
+            hideLoading();
+          })
+          .withFailureHandler(function(err) {
+            hideLoading();
+            alert('Error al ejecutar ' + label + ': ' + err.message);
+          })[funcName]();
+      }
+
+      function showLoading(msg) {
+        const overlay = document.getElementById('loading-overlay');
+        document.getElementById('loading-text').innerText = msg;
+        overlay.style.display = 'flex';
+      }
+
+      function hideLoading() {
+        document.getElementById('loading-overlay').style.display = 'none';
+      }
+    </script>
+  </body>
+</html>

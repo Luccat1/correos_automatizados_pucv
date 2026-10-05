@@ -7,8 +7,9 @@
 // Global cache for Gmail aliases
 let _ALIASES_CACHE = null;
 
-// PUCV 100-year anniversary palette
+// PUCV 100-year anniversary palette & modern aesthetic
 const COLORS = {
+  navy: '#001f3f',
   primary: '#24588d',
   secondary: '#1d71b8',
   accent: '#008cba',
@@ -19,11 +20,11 @@ const COLORS = {
   purple: '#9366a9',
   yellow: '#f4ce46',
   teal: '#30b6be',
-  bg: '#ece5e0',
+  bg: '#f8fafc',
   white: '#ffffff',
-  text: '#333333',
-  textLight: '#666666',
-  border: '#e0e0e0'
+  text: '#1e293b',
+  textLight: '#64748b',
+  border: '#e2e8f0'
 };
 
 const DEFAULT_LOGO_URL = "https://comunicacionestrategica.pucv.cl/LOGO100/7/color.png";
@@ -372,7 +373,7 @@ function shareFileWithMultiple(fileId, emailList) {
 }
 
 /**
- * Master HTML layout function with institutional branding.
+ * Master HTML layout function with institutional branding and modern email aesthetic.
  * @param {Object} options
  * @returns {string} Fully rendered HTML string.
  */
@@ -384,74 +385,111 @@ function buildEmailLayout(options) {
   const headerColor = options.headerColor || COLORS.primary;
 
   const logoHtml = options.logoLink 
-    ? `<a href="${options.logoLink}" target="_blank" style="text-decoration: none;"><img src="${logoUrl}" alt="${logoAlt}" style="max-width: 250px; height: auto; border: 0; outline: none; margin-bottom: 20px;"></a>`
-    : `<img src="${logoUrl}" alt="${logoAlt}" style="max-width: 250px; height: auto; margin-bottom: 20px;">`;
+    ? `<a href="${options.logoLink}" target="_blank" style="text-decoration: none;"><img src="${logoUrl}" alt="${logoAlt}" style="max-width: 240px; height: auto; border: 0; outline: none; display: block; margin: 0 auto;"></a>`
+    : `<img src="${logoUrl}" alt="${logoAlt}" style="max-width: 240px; height: auto; border: 0; outline: none; display: block; margin: 0 auto;">`;
 
   const alertBandHtml = options.alertBand 
-    ? `<div style="background-color: ${COLORS.danger}; color: ${COLORS.white}; padding: 10px; text-align: center; font-weight: bold; font-family: sans-serif; font-size: 14px;">${options.alertBand}</div>`
+    ? `<tr>
+         <td style="background: linear-gradient(135deg, ${COLORS.danger} 0%, #c62828 100%); color: ${COLORS.white}; padding: 13px 20px; text-align: center; font-weight: bold; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; letter-spacing: 0.3px;">
+           ${options.alertBand}
+         </td>
+       </tr>`
     : "";
 
   const extraNoteHtml = options.extraNote
-    ? `<div style="background-color: #fff9c4; border-left: 4px solid ${COLORS.yellow}; padding: 15px; margin-top: 25px; font-family: sans-serif; font-size: 14px; color: ${COLORS.text};">
-         <strong style="color: #616161;">Nota adicional:</strong><br>${options.extraNote}
+    ? `<div style="background-color: #fefce8; border: 1px solid #fef08a; border-left: 4px solid #eab308; border-radius: 0 8px 8px 0; padding: 16px 18px; margin-top: 25px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; color: #713f12; line-height: 1.55; box-shadow: 0 1px 3px rgba(234,179,8,0.05);">
+         <strong style="color: #854d0e; display: inline-block; margin-bottom: 4px;">📌 Nota adicional:</strong><br>${options.extraNote}
        </div>`
     : "";
 
-  const footerHtml = footerLines.map(line => `<p style="margin: 5px 0;"><strong>${line}</strong></p>`).join("");
+  const footerHtml = footerLines.map(line => `<p style="margin: 4px 0;"><strong>${line}</strong></p>`).join("");
 
   return `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: sans-serif; margin: 0; padding: 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    .container { max-width: 600px; margin: 20px auto; border: 1px solid ${COLORS.border}; }
-    .header { background-color: ${headerColor}; padding: 25px; text-align: center; }
-    .content { padding: 40px; background-color: ${COLORS.white}; font-size: 16px; line-height: 1.6; color: ${COLORS.text}; }
-    .footer { background-color: #f8f8f8; padding: 30px; text-align: center; font-size: 13px; color: ${COLORS.textLight}; border-top: 1px solid ${COLORS.border}; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    p { margin: 0 0 16px 0; }
   </style>
 </head>
-<body style="background-color: ${COLORS.bg}; font-family: Arial, sans-serif; padding: 20px;">
-  <div style="max-width: 600px; margin: 0 auto; background-color: ${COLORS.white}; border: 1px solid ${COLORS.border};">
-    <div style="padding: 20px; text-align: center;">
-      ${logoHtml}
-    </div>
-    <div style="background-color: ${headerColor}; padding: 20px; text-align: center; color: ${COLORS.white}; font-family: sans-serif;">
-      <h1 style="margin: 0; font-size: 20px; letter-spacing: 1px;">${headerTitle}</h1>
-    </div>
-    ${alertBandHtml}
-    <div style="padding: 40px; line-height: 1.6; color: ${COLORS.text}; font-family: sans-serif; font-size: 16px;">
-      ${options.content}
-      ${extraNoteHtml}
-    </div>
-    <div style="background-color: #f9f9f9; padding: 30px; text-align: center; font-family: sans-serif; font-size: 12px; color: ${COLORS.textLight}; border-top: 1px solid ${COLORS.border};">
-      ${footerHtml}
-    </div>
-  </div>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: ${COLORS.bg}; color: ${COLORS.text};">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${COLORS.bg}; padding: 28px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: ${COLORS.white}; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07); border: 1px solid ${COLORS.border}; max-width: 600px; width: 100%;">
+          
+          <!-- Top Logo Banner -->
+          <tr>
+            <td align="center" style="padding: 24px 20px 20px; background-color: #ffffff;">
+              ${logoHtml}
+            </td>
+          </tr>
+
+          <!-- Main Institutional Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, ${COLORS.navy} 0%, ${headerColor} 55%, ${COLORS.secondary} 100%); padding: 26px 24px; text-align: center; color: ${COLORS.white};">
+              <p style="margin: 0 0 6px 0; color: rgba(255,255,255,0.85); font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">
+                Pontificia Universidad Católica de Valparaíso
+              </p>
+              <h1 style="color: #ffffff; margin: 0; font-size: 21px; font-weight: 700; letter-spacing: 0.4px; line-height: 1.35;">
+                ${headerTitle}
+              </h1>
+            </td>
+          </tr>
+
+          ${alertBandHtml}
+
+          <!-- Content Body -->
+          <tr>
+            <td style="padding: 36px 32px; line-height: 1.65; color: #334155; font-size: 15.5px;">
+              ${options.content}
+              ${extraNoteHtml}
+            </td>
+          </tr>
+
+          <!-- Institutional Footer -->
+          <tr>
+            <td style="background: linear-gradient(135deg, ${COLORS.navy} 0%, ${COLORS.primary} 100%); padding: 26px 24px; text-align: center; color: #ffffff;">
+              <div style="color: #ffffff; font-size: 13.5px; font-weight: 600; line-height: 1.55;">
+                ${footerHtml}
+              </div>
+              <div style="border-top: 1px solid rgba(255,255,255,0.18); margin: 16px auto 12px; max-width: 480px;"></div>
+              <p style="color: rgba(255,255,255,0.65); margin: 0; font-size: 11.5px; line-height: 1.45;">
+                Este es un comunicado oficial emitido por la Pontificia Universidad Católica de Valparaíso.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
   `.trim();
 }
 
 /**
- * Returns an HTML button string.
+ * Returns an HTML button string with modern gradient and shadow.
  * @param {string} text
  * @param {string} url
  * @param {string} [color]
  * @returns {string}
  */
 function buildButton(text, url, color) {
-  const btnColor = color || COLORS.primary;
+  const bg = color || "linear-gradient(135deg, #24588d 0%, #1d71b8 100%)";
   return `
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="${url}" target="_blank" style="background-color: ${btnColor}; color: ${COLORS.white} !important; text-decoration: none; padding: 15px 30px; border-radius: 4px; font-weight: bold; display: inline-block; font-family: sans-serif;">${text}</a>
+    <div style="text-align: center; margin: 32px 0;">
+      <a href="${url}" target="_blank" style="background: ${bg}; color: #ffffff !important; text-decoration: none; padding: 14px 34px; border-radius: 30px; font-weight: 700; font-size: 15px; display: inline-block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; box-shadow: 0 4px 15px rgba(36, 88, 141, 0.35); letter-spacing: 0.3px;">${text}</a>
     </div>
   `;
 }
 
 /**
- * Returns a styled callout/info box HTML string.
+ * Returns a styled callout/info box HTML string with modern accents.
  * @param {string} content
  * @param {string} [borderColor]
  * @returns {string}
@@ -459,20 +497,20 @@ function buildButton(text, url, color) {
 function buildInfoBox(content, borderColor) {
   const border = borderColor || COLORS.primary;
   return `
-    <div style="background-color: #f0f7ff; border-left: 5px solid ${border}; padding: 15px; margin: 20px 0; font-family: sans-serif; font-size: 15px;">
+    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid ${border}; border-radius: 0 10px 10px 0; padding: 18px 20px; margin: 22px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14.5px; line-height: 1.6; color: #1e293b; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
       ${content}
     </div>
   `;
 }
 
 /**
- * Returns a yellow warning box.
+ * Returns a styled warning box HTML string with modern amber aesthetics.
  * @param {string} content
  * @returns {string}
  */
 function buildWarningBox(content) {
   return `
-    <div style="background-color: #fff9c4; border: 1px solid ${COLORS.yellow}; padding: 15px; margin: 20px 0; font-family: sans-serif; font-size: 14px; color: #616161;">
+    <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0 10px 10px 0; padding: 18px 20px; margin: 22px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14.5px; line-height: 1.6; color: #92400e; box-shadow: 0 2px 6px rgba(245,158,11,0.04);">
       ${content}
     </div>
   `;

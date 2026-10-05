@@ -9,6 +9,8 @@
  */
 function onOpen() {
   const menuItems = [
+    { label: '📊 Ver Dashboard', functionName: 'showDashboard' },
+    null, // separator
     { label: '⚙️ Configurar Plantilla', functionName: 'menuSetupTemplate' },
     null, // separator
     {
@@ -234,49 +236,100 @@ function menuPreview() {
       <!DOCTYPE html>
       <html>
       <head>
+        <meta charset="UTF-8">
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
         <style>
-          body { font-family: sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body { 
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f1f5f9; 
+            color: #1e293b;
+          }
           .preview-header { 
-            background-color: #24588d; 
+            background: linear-gradient(135deg, #001f3f 0%, #24588d 50%, #1d71b8 100%); 
             color: white; 
-            padding: 15px 20px; 
+            padding: 16px 24px; 
             position: sticky; 
             top: 0; 
             z-index: 100;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 14px rgba(0,31,63,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
           }
-          .preview-header h3 { margin: 0; font-size: 16px; }
-          .preview-header p { margin: 5px 0 0; font-size: 12px; opacity: 0.9; }
-          .preview-container { padding: 20px; display: flex; justify-content: center; }
+          .preview-header h3 { 
+            margin: 0 0 2px 0; 
+            font-size: 16px; 
+            font-weight: 700;
+            color: #ffffff;
+          }
+          .preview-header p { 
+            margin: 0; 
+            font-size: 11px; 
+            opacity: 0.85; 
+            font-weight: 500;
+          }
+          .preview-badge {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.25);
+            backdrop-filter: blur(4px);
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #ffffff;
+          }
+          .preview-container { 
+            padding: 24px 20px; 
+            display: flex; 
+            justify-content: center; 
+          }
           .email-wrapper { 
             background: white; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.05); 
             width: 100%; 
-            max-width: 600px; 
+            max-width: 620px; 
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
           }
           .preview-footer {
-            padding: 15px 20px;
+            padding: 14px 24px;
             text-align: right;
             background: white;
-            border-top: 1px solid #eee;
+            border-top: 1px solid #e2e8f0;
             position: sticky;
             bottom: 0;
+            display: flex;
+            justify-content: flex-end;
           }
           .btn-close {
-            background: #666;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            padding: 9px 20px;
+            border-radius: 8px;
             cursor: pointer;
-            font-weight: bold;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.2s ease;
+          }
+          .btn-close:hover {
+            background: #e2e8f0;
+            color: #0f172a;
           }
         </style>
       </head>
       <body>
         <div class="preview-header">
-          <h3>Vista Previa: ${template.name}</h3>
-          <p><strong>Asunto:</strong> ${template.headerTitle} | <strong>Destinatarios:</strong> ~${rowCount}</p>
+          <div>
+            <h3>👁 Vista Previa: ${template.name}</h3>
+            <p><strong>Asunto:</strong> ${template.headerTitle}</p>
+          </div>
+          <span class="preview-badge">~${rowCount} destinatarios</span>
         </div>
         <div class="preview-container">
           <div class="email-wrapper">
@@ -302,17 +355,24 @@ function menuPreview() {
 }
 
 /**
- * Triggers mass sending of emails.
+ * Triggers mass sending of emails (opens dialog in 'send' mode).
  */
 function menuSendEmails() {
-  _showSendDialog(false);
+  _showSendDialog('send');
 }
 
 /**
- * Triggers mass creation of drafts.
+ * Triggers mass creation of drafts (opens dialog in 'draft' mode).
  */
 function menuCreateDrafts() {
-  _showSendDialog(true);
+  _showSendDialog('draft');
+}
+
+/**
+ * Triggers test email dialog (opens dialog in 'test' mode).
+ */
+function menuSendTest() {
+  _showSendDialog('test');
 }
 
 /**
@@ -428,6 +488,7 @@ function _executeBatch(asDraft, overrides) {
     senderName: config.senderName || template.senderName,
     senderAlias: config.senderAlias || template.senderAlias,
     asDraft: asDraft,
+    batchLimit: (overrides && overrides.batchLimit) ? parseInt(overrides.batchLimit) : null,
     sleepEvery: 20,
     sleepMs: 1000
   };
@@ -694,11 +755,11 @@ function _appendLogEntry(logData) {
 }
 
 /**
- * Shows the pre-send customization dialog.
- * @param {boolean} asDraft
+ * Shows the pre-send customization dialog with selectable execution modes.
+ * @param {string} [initialMode='send'] - 'send', 'draft', or 'test'.
  * @private
  */
-function _showSendDialog(asDraft) {
+function _showSendDialog(initialMode) {
   const resolved = _getSelectedTemplate();
   if (!resolved) return;
 
@@ -727,28 +788,119 @@ function _showSendDialog(asDraft) {
   html.bcc = config.bcc || '';
   html.rowCount = rowCount;
   html.dataSheetName = sheet.getName();
-  html.asDraft = asDraft;
+  html.initialMode = initialMode || 'send';
   html.senderAlias = config.senderAlias || template.senderAlias || '';
 
   const ui = html.evaluate()
-      .setWidth(500)
-      .setHeight(450)
-      .setTitle(asDraft ? 'Preparar Borradores' : 'Confirmar Envío Masivo');
+      .setWidth(540)
+      .setHeight(640)
+      .setTitle('Gestión de Envío de Correos');
 
-  SpreadsheetApp.getUi().showModalDialog(ui, ' '); // Title is handled inside dialog
+  SpreadsheetApp.getUi().showModalDialog(ui, ' ');
 }
 
 /**
  * Server-side callback from SendDialog.html.
+ * Handles test sends, draft creation, and real batch sends.
  * @param {Object} formData
  */
 function executeBatchFromDialog(formData) {
-  _executeBatch(formData.asDraft, formData);
+  if (formData.mode === 'test') {
+    _executeTestSend(formData);
+  } else {
+    const asDraft = (formData.mode === 'draft');
+    _executeBatch(asDraft, formData);
+  }
+}
+
+/**
+ * Executes a single test email send from the dialog with custom subject, note, and recipient.
+ * @param {Object} formData
+ * @private
+ */
+function _executeTestSend(formData) {
+  const resolved = _getSelectedTemplate();
+  if (!resolved) return;
+
+  const { template, config } = resolved;
+  const sheet = _getDataSheet(config.dataSheet);
+  if (!sheet) return;
+
+  const headers = mapHeaders(sheet);
+  const missingTest = (template.requiredHeaders || []).filter(h => headers[h] === undefined);
+  if (missingTest.length > 0) {
+    showAlert('Cabeceras Faltantes', `Faltan las siguientes columnas requeridas: ${missingTest.join(', ')}`);
+    return;
+  }
+
+  const allValues = sheet.getDataRange().getValues();
+  const rows = allValues.slice(1);
+  if (rows.length === 0) {
+    showAlert('Sin Datos', 'La hoja de datos está vacía.');
+    return;
+  }
+
+  try {
+    const extraData = { configExtras: { ...config.extras } };
+    if (formData && formData.extraNote !== undefined) {
+      extraData.configExtras.extra_note = formData.extraNote;
+    }
+    if (typeof template.prepareExtraData === 'function') {
+      template.prepareExtraData(rows, headers, extraData);
+    }
+
+    let rowData = null;
+    for (let idx = 0; idx < rows.length; idx++) {
+      rowData = template.processRow(rows[idx], headers, idx + 2, extraData);
+      if (rowData) break;
+    }
+    if (!rowData) {
+      showAlert('Sin Datos Procesables', 'No se encontró ninguna fila procesable para generar la prueba.');
+      return;
+    }
+
+    const innerHtml = template.buildHtml(rowData);
+    const isObject = typeof innerHtml === 'object';
+    const body = isObject ? innerHtml.content : innerHtml;
+    const alertBand = isObject ? innerHtml.alertBand : null;
+    const extraNote = (formData && formData.extraNote) || (isObject ? innerHtml.extraNote : null);
+
+    const fullHtml = buildEmailLayout({
+      content: body,
+      headerTitle: (formData && formData.subject) || template.headerTitle,
+      footerLines: template.footerLines,
+      alertBand: alertBand,
+      extraNote: extraNote
+    });
+
+    const targetEmail = (formData && formData.testEmail) || Session.getActiveUser().getEmail();
+    const cc = (formData && formData.cc) || '';
+    const bcc = (formData && formData.bcc) || '';
+
+    const result = sendEmail({
+      to: targetEmail,
+      subject: `[PRUEBA] ${(formData && formData.subject) || template.headerTitle}`,
+      htmlBody: fullHtml,
+      cc: cc,
+      bcc: bcc,
+      senderName: config.senderName || template.senderName,
+      senderAlias: config.senderAlias || template.senderAlias,
+      attachments: rowData.attachments || []
+    });
+
+    if (result.success) {
+      showAlert('Prueba Enviada', `Se ha enviado con éxito un correo de prueba a:\n${targetEmail}`);
+    } else {
+      showAlert('Error en Prueba', `No se pudo enviar el correo de prueba: ${result.error}`);
+    }
+  } catch (e) {
+    showAlert('Error en Prueba', e.message);
+  }
 }
 
 /**
  * Server-side function called from SendDialog.html to fetch pre-flight data.
- * Returns quota, sender alias, batch warning threshold, and processable row count.
+ * Returns quota, sender alias, batch warning threshold, processable row count, and active user email.
  * @returns {Object|null}
  */
 function getPreflightData() {
@@ -782,11 +934,131 @@ function getPreflightData() {
     processableCount = totalDataRows;
   }
 
+  var userEmail = '';
+  try {
+    userEmail = Session.getActiveUser().getEmail();
+  } catch (e) {
+    // In some restricted environments getEmail might be empty
+  }
+
   return {
     quota: MailApp.getRemainingDailyQuota(),
     senderAlias: config.senderAlias || template.senderAlias || '',
     batchThreshold: parseInt(config.extras.batch_warning_threshold) || 50,
     processableRows: processableCount,
-    totalRows: totalDataRows
+    totalRows: totalDataRows,
+    userEmail: userEmail
+  };
+}
+
+/**
+ * Displays the statistics and campaign dashboard in a Google Sheets sidebar.
+ */
+function showDashboard() {
+  const html = HtmlService.createTemplateFromFile('Dashboard')
+    .evaluate()
+    .setTitle('Dashboard Correos PUCV')
+    .setWidth(390);
+
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+/**
+ * Server-side function called by Dashboard.html to fetch campaign metrics and status distribution.
+ * @returns {Object}
+ */
+function getDashboardStats() {
+  const quota = MailApp.getRemainingDailyQuota();
+  const resolved = _getSelectedTemplate();
+
+  if (!resolved) {
+    return {
+      hasConfig: false,
+      quota: quota,
+      error: 'No se encontró una plantilla configurada en la hoja "Config".'
+    };
+  }
+
+  const { template, config } = resolved;
+  const sheet = _getDataSheet(config.dataSheet);
+
+  if (!sheet) {
+    return {
+      hasConfig: true,
+      templateId: template.id,
+      templateName: template.name,
+      quota: quota,
+      error: 'No se encontró la hoja de datos "' + (config.dataSheet || 'Datos') + '".'
+    };
+  }
+
+  const headers = mapHeaders(sheet);
+  const statusColName = template.statusColumn || 'Estado_Envio';
+  const statusIdx = headers[statusColName.trim().toLowerCase()];
+
+  const lastRow = sheet.getLastRow();
+  const totalRows = Math.max(0, lastRow - 1);
+
+  let sentCount = 0;
+  let draftCount = 0;
+  let errorCount = 0;
+  let pendingCount = 0;
+
+  if (totalRows > 0 && statusIdx !== undefined) {
+    const statusValues = sheet.getRange(2, statusIdx + 1, totalRows, 1).getValues();
+    for (let i = 0; i < statusValues.length; i++) {
+      const st = String(statusValues[i][0] || '').toLowerCase().trim();
+      if (!st || st.includes('saltado')) {
+        pendingCount++;
+      } else if (st.includes('enviado')) {
+        sentCount++;
+      } else if (st.includes('borrador')) {
+        draftCount++;
+      } else if (st.includes('error')) {
+        errorCount++;
+      } else {
+        pendingCount++;
+      }
+    }
+  } else {
+    pendingCount = totalRows;
+  }
+
+  // Load recent log entries from the "Log" sheet
+  const recentLogs = [];
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const logSheet = ss.getSheetByName('Log');
+  if (logSheet && logSheet.getLastRow() > 1) {
+    const logData = logSheet.getDataRange().getValues();
+    const startIdx = Math.max(1, logData.length - 4);
+    for (let j = logData.length - 1; j >= startIdx; j--) {
+      const row = logData[j];
+      recentLogs.push({
+        timestamp: row[0] ? formatDateEs(row[0]) : '',
+        templateName: row[2] || row[1] || 'Envío',
+        sent: row[5] || 0,
+        errors: row[6] || 0,
+        isDraft: row[7] === true || String(row[7]).toLowerCase() === 'true'
+      });
+    }
+  }
+
+  const processedCount = sentCount + draftCount;
+  const progressPct = totalRows > 0 ? Math.round((processedCount / totalRows) * 100) : 0;
+
+  return {
+    hasConfig: true,
+    templateId: template.id,
+    templateName: template.name,
+    dataSheetName: sheet.getName(),
+    totalRows: totalRows,
+    sentCount: sentCount,
+    draftCount: draftCount,
+    errorCount: errorCount,
+    pendingCount: pendingCount,
+    progressPct: progressPct,
+    quota: quota,
+    recentLogs: recentLogs,
+    lastUpdate: Utilities.formatDate(new Date(), 'America/Santiago', 'HH:mm:ss')
   };
 }
