@@ -30,14 +30,6 @@ const COLORS = {
 const DEFAULT_LOGO_URL = "https://comunicacionestrategica.pucv.cl/LOGO100/7/color.png";
 
 /**
- * Returns the active sheet from the bound spreadsheet.
- * @returns {GoogleAppsScript.Spreadsheet.Sheet}
- */
-function getActiveSheet() {
-  return SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-}
-
-/**
  * Gets a sheet by name with error handling.
  * @param {string} name - Name of the sheet to retrieve.
  * @returns {GoogleAppsScript.Spreadsheet.Sheet|null}
@@ -198,22 +190,6 @@ function extractFileId(url) {
 }
 
 /**
- * Returns remaining daily email quota.
- * @returns {number}
- */
-function checkQuota() {
-  return MailApp.getRemainingDailyQuota();
-}
-
-/**
- * Wrapper for Utilities.sleep().
- * @param {number} ms - Milliseconds to sleep.
- */
-function sleep(ms) {
-  Utilities.sleep(ms);
-}
-
-/**
  * Main email dispatch function.
  * @param {Object} options
  * @param {string} options.to - Recipient.
@@ -294,6 +270,10 @@ function sendBatch(rows, processFn, options) {
   let errors = 0;
   const statuses = [];
 
+  // Read quota once before the loop; decrement it locally after each successful
+  // send to avoid one MailApp.getRemainingDailyQuota() API call per row.
+  let remainingQuota = MailApp.getRemainingDailyQuota();
+
   for (let i = 0; i < rows.length; i++) {
     // Check batch limit
     if (options.batchLimit && processed >= options.batchLimit) {
@@ -303,7 +283,7 @@ function sendBatch(rows, processFn, options) {
     }
 
     // Check quota protection
-    if (checkQuota() < 5) {
+    if (remainingQuota < 5) {
       console.error("Quota nearly exhausted. Stopping batch.");
       statuses.push(["ERROR: QUOTA INSUFICIENTE"]);
       continue;
@@ -312,6 +292,10 @@ function sendBatch(rows, processFn, options) {
     const rowData = processFn(rows[i], i);
     if (!rowData) {
       statuses.push(["SALTADO"]);
+      continue;
+    }
+    if (typeof rowData === 'string') {
+      statuses.push([rowData]);
       continue;
     }
 
@@ -326,6 +310,7 @@ function sendBatch(rows, processFn, options) {
       const statusText = result.mode === 'draft' ? "BORRADOR CREADO" : "ENVIADO";
       statuses.push([`${statusText} (${result.timestamp})`]);
       processed++;
+      remainingQuota--;
     } else {
       statuses.push([`ERROR: ${result.error}`]);
       errors++;
@@ -336,7 +321,7 @@ function sendBatch(rows, processFn, options) {
       if (typeof options.onProgress === 'function') {
         options.onProgress(i + 1, rows.length, processed, errors);
       }
-      sleep(options.sleepMs || 1000);
+      Utilities.sleep(options.sleepMs || 1000);
     }
   }
 
@@ -359,17 +344,6 @@ function shareFileAsViewer(fileId, email) {
     console.error(`Error compartiendo archivo ${fileId} con ${email}:`, e);
     return { success: false, error: e.toString() };
   }
-}
-
-/**
- * Shares a Google Drive file with multiple emails.
- * @param {string} fileId - ID of the file to share.
- * @param {Array.<string>} emailList - Array of emails.
- * @returns {Array.<Object>} Array of results.
- */
-function shareFileWithMultiple(fileId, emailList) {
-  if (!emailList || !Array.isArray(emailList)) return [];
-  return emailList.map(email => shareFileAsViewer(fileId, email));
 }
 
 /**

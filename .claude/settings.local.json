@@ -21,7 +21,8 @@
       "Bash(uvx --help)",
       "Bash(uv tool:*)",
       "Bash(uvx --show-settings)",
-      "Bash(uv cache:*)"
+      "Bash(uv cache:*)",
+      "Bash(git grep:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

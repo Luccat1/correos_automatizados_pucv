@@ -99,81 +99,6 @@ function _getSelectedTemplate() {
 // --- Menu Handlers ---
 
 /**
- * Sends test email to the current user.
- */
-function menuSendTest() {
-  const resolved = _getSelectedTemplate();
-  if (!resolved) return;
-
-  const { template, config } = resolved;
-  const sheet = _getDataSheet(config.dataSheet);
-  if (!sheet) return;
-
-  const headers = mapHeaders(sheet);
-
-  // Validate required headers (same as _executeBatch)
-  const missingTest = (template.requiredHeaders || []).filter(h => headers[h] === undefined);
-  if (missingTest.length > 0) {
-    showAlert('Cabeceras Faltantes', `Faltan las siguientes columnas requeridas: ${missingTest.join(', ')}`);
-    return;
-  }
-
-  // Load all rows so prepareExtraData can aggregate cross-row data
-  const allValues = sheet.getDataRange().getValues();
-  const rows = allValues.slice(1);
-  const row = rows[0];
-
-  if (!row) {
-    showAlert('Sin Datos', 'La hoja de datos está vacía.');
-    return;
-  }
-
-  try {
-    const extraData = { configExtras: { ...config.extras } };
-    if (typeof template.prepareExtraData === 'function') {
-      template.prepareExtraData(rows, headers, extraData);
-    }
-    // Scan for the first row the template accepts (some templates skip certain row types)
-    let rowData = null;
-    for (let idx = 0; idx < rows.length; idx++) {
-      rowData = template.processRow(rows[idx], headers, idx + 2, extraData);
-      if (rowData) break;
-    }
-    if (!rowData) {
-      showAlert('Sin Vista Previa', 'No se encontró ninguna fila procesable (todas las filas fueron saltadas por la plantilla).');
-      return;
-    }
-
-    // Prepare HTML
-    const innerHtml = template.buildHtml(rowData);
-    const isObject = typeof innerHtml === 'object';
-    const body = isObject ? innerHtml.content : innerHtml;
-    const alertBand = isObject ? innerHtml.alertBand : null;
-
-    const fullHtml = buildEmailLayout({
-      content: body,
-      headerTitle: template.headerTitle,
-      footerLines: template.footerLines,
-      alertBand: alertBand
-    });
-
-    const testEmail = Session.getActiveUser().getEmail();
-    sendEmail({
-      to: testEmail,
-      subject: `[PRUEBA] ${template.headerTitle}`,
-      htmlBody: fullHtml,
-      senderName: config.senderName || template.senderName,
-      senderAlias: config.senderAlias || template.senderAlias,
-      attachments: rowData.attachments || []
-    });
-
-    showAlert('Prueba Enviada', `Se ha enviado un correo de prueba a ${testEmail}`);
-  } catch (e) {
-    showAlert('Error en Prueba', e.message);
-  }
-}
-
-/**
  * Shows a preview of the email in a modal dialog.
  */
 function menuPreview() {
@@ -423,6 +348,7 @@ function _executeBatch(asDraft, overrides) {
     const dirSheet = ss.getSheets().find(s => s.getName().toLowerCase() === 'directorio');
     if (dirSheet) {
       extraData.directoryRows = dirSheet.getDataRange().getValues();
+      extraData.dirHeaders = mapHeaders(dirSheet);
     }
   }
 
@@ -436,13 +362,21 @@ function _executeBatch(asDraft, overrides) {
     template.prepareExtraData(rows, headers, extraData);
   }
 
+  // Track rows with terminal status so we can preserve them after the batch.
+  // sendBatch writes "SALTADO" for any null return from processFn, which would
+  // overwrite existing "ENVIADO" statuses and cause duplicate sends on future runs.
+  const terminalRowIndices = new Set();
+
   const processFn = (row, i) => {
     const rowIndex = i + 2;
     const currentStatus = String(row[statusCol - 1] || '').toLowerCase();
-    
-    // Only skip terminal states (enviado/borrador). ERROR and empty rows are re-processable.
-    // Legacy SALTADO rows are also re-processable (Phase 1 converted these to ERROR: reason).
-    if (currentStatus.includes('enviado') || currentStatus.includes('borrador')) {
+
+    // Terminal states: never re-process these rows.
+    // - enviado / borrador: already dispatched
+    // - saltado: template explicitly skipped (missing data, etc.) — clear manually to retry
+    // ERROR and empty statuses are re-processable so users can fix data and retry.
+    if (currentStatus.includes('enviado') || currentStatus.includes('borrador') || currentStatus.includes('saltado')) {
+      terminalRowIndices.add(i);
       return null;
     }
 
@@ -480,7 +414,7 @@ function _executeBatch(asDraft, overrides) {
       };
     } catch (e) {
       console.error(`Error en fila ${rowIndex}: ${e.message}`);
-      return null;
+      return `ERROR: ${e.message}`;
     }
   };
 
@@ -504,8 +438,17 @@ function _executeBatch(asDraft, overrides) {
 
   const results = sendBatch(rows, processFn, options);
 
+  // Restore original statuses for terminal rows so we never overwrite
+  // "ENVIADO (fecha)" or "SALTADO" with a new "SALTADO" entry.
+  const finalStatuses = results.statuses.map(function(status, i) {
+    if (terminalRowIndices.has(i)) {
+      return [String(rows[i][statusCol - 1] || '')];
+    }
+    return status;
+  });
+
   // Update statuses
-  batchUpdateColumn(sheet, 2, statusCol, results.statuses);
+  batchUpdateColumn(sheet, 2, statusCol, finalStatuses);
 
   // Append to persistent Log sheet (LOG-01)
   _appendLogEntry({
@@ -925,7 +868,8 @@ function getPreflightData() {
     var statusValues = sheet.getRange(2, statusIdx + 1, totalDataRows, 1).getValues();
     for (var r = 0; r < statusValues.length; r++) {
       var st = String(statusValues[r][0] || '').toLowerCase();
-      if (!st || st.includes('error') || st.includes('saltado')) {
+      // Processable: empty (never sent) or error (fixable). Terminal states are excluded.
+      if (!st || st.includes('error')) {
         processableCount++;
       }
     }
@@ -1008,7 +952,7 @@ function getDashboardStats() {
     const statusValues = sheet.getRange(2, statusIdx + 1, totalRows, 1).getValues();
     for (let i = 0; i < statusValues.length; i++) {
       const st = String(statusValues[i][0] || '').toLowerCase().trim();
-      if (!st || st.includes('saltado')) {
+      if (!st) {
         pendingCount++;
       } else if (st.includes('enviado')) {
         sentCount++;
@@ -1016,6 +960,9 @@ function getDashboardStats() {
         draftCount++;
       } else if (st.includes('error')) {
         errorCount++;
+      } else if (st.includes('saltado')) {
+        // Saltado = terminal (template skipped). Count alongside sent for progress purposes.
+        sentCount++;
       } else {
         pendingCount++;
       }

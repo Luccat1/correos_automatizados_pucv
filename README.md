@@ -10,27 +10,27 @@ Este sistema permite gestionar campañas de comunicación institucional de alta 
 
 El sistema se basa en una estructura de cinco archivos principales que deben copiarse en el editor de Apps Script de cada hoja:
 
-1.  **`Core.gs` (El Motor):** Contiene toda la lógica compartida.
-    *   Manejo de hojas de cálculo y mapeo de cabeceras.
-    *   Envio masivo de correos con control de cuotas y throttling.
-    *   Maquetación HTML institucional (Header/Footer PUCV).
-    *   Helpers para compartir archivos en Google Drive.
-    *   Constructor de menús y diálogos de usuario.
+1. **`Core.gs` (El Motor):** Contiene toda la lógica compartida.
+    * Manejo de hojas de cálculo y mapeo de cabeceras.
+    * Envio masivo de correos con control de cuotas y throttling.
+    * Maquetación HTML institucional (Header/Footer PUCV).
+    * Helpers para compartir archivos en Google Drive.
+    * Constructor de menús y diálogos de usuario.
 
-2.  **`Templates.gs` (El Registro):** Centraliza la definición de los correos.
-    *   Registro de plantillas mediante un patrón extensible.
-    *   Definición de campos requeridos y configuraciones por defecto.
-    *   Lógica específica para procesar cada fila de datos.
+2. **`Templates.gs` (El Registro):** Centraliza la definición de los correos.
+    * Registro de plantillas mediante un patrón extensible.
+    * Definición de campos requeridos y configuraciones por defecto.
+    * Lógica específica para procesar cada fila de datos.
 
-3.  **`Main.gs` (El Punto de Entrada):** Gestiona la interfaz y las acciones.
-    *   Menú desplegable personalizado: Enviar, Prueba, Vista Previa, Borradores.
-    *   Carga automática de configuración desde la hoja "Config".
-    *   Orquestación de envíos masivos y creación de borradores.
+3. **`Main.gs` (El Punto de Entrada):** Gestiona la interfaz y las acciones.
+    * Menú desplegable personalizado: Enviar, Prueba, Vista Previa, Borradores.
+    * Carga automática de configuración desde la hoja "Config".
+    * Orquestación de envíos masivos y creación de borradores.
 
-4.  **Archivos HTML de UI:** Vistas interactivas para Google Sheets con tipografía *Plus Jakarta Sans* y diseño Bento Grid.
-    *   **`Dashboard.html`:** Panel lateral (Sidebar) con métricas en tiempo real, cuota de Gmail, tasa de avance y desglose de envíos.
-    *   **`SendDialog.html`:** Interfaz para pre-visualizar cuota y filas a procesar, personalizando asunto, copia y notas antes de enviar.
-    *   **`TemplateSelector.html`:** Galería visual para la selección y configuración de nuevas plantillas.
+4. **Archivos HTML de UI:** Vistas interactivas para Google Sheets con tipografía *Plus Jakarta Sans* y diseño Bento Grid.
+    * **`Dashboard.html`:** Panel lateral (Sidebar) con métricas en tiempo real, cuota de Gmail, tasa de avance y desglose de envíos.
+    * **`SendDialog.html`:** Interfaz para pre-visualizar cuota y filas a procesar, personalizando asunto, copia y notas antes de enviar.
+    * **`TemplateSelector.html`:** Galería visual para la selección y configuración de nuevas plantillas.
 
 ## 📋 Plantillas Disponibles
 
@@ -48,8 +48,8 @@ El sistema se basa en una estructura de cinco archivos principales que deben cop
 
 ## 🛠️ Guías Rápidas
 
-*   **[Guía de Despliegue](./docs/DEPLOYMENT.md):** Cómo instalar este sistema en una nueva hoja de cálculo.
-*   **[Guía de Creación de Plantillas](./docs/CREATING_TEMPLATES.md):** Instrucciones técnicas para desarrolladores que deseen añadir nuevos tipos de correo.
+* **[Guía de Despliegue](./docs/DEPLOYMENT.md):** Cómo instalar este sistema en una nueva hoja de cálculo.
+* **[Guía de Creación de Plantillas](./docs/CREATING_TEMPLATES.md):** Instrucciones técnicas para desarrolladores que deseen añadir nuevos tipos de correo.
 
 ---
 **PUCV - Centro de Idiomas**

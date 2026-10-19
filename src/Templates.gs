@@ -86,7 +86,7 @@ const certificateTemplate = {
     if (fileId) {
       const shareResult = shareFileAsViewer(fileId, correo);
       if (!shareResult.success) {
-        return { error: 'No se pudo compartir el archivo ' + fileId };
+        throw new Error('No se pudo compartir el archivo ' + fileId + (shareResult.error ? ': ' + shareResult.error : ''));
       }
     }
 
@@ -98,19 +98,6 @@ const certificateTemplate = {
       firstName: extractFirstName(nombre, "estudiante"),
       programName: (extraData && extraData.configExtras && extraData.configExtras.program_name) || this.defaults?.programName
     };
-  },
-
-  /**
-   * Returns the recipient email without triggering Drive side effects.
-   * Used by the pre-flight email validation loop in Main.gs (ROBUST-02).
-   * @param {Array} row - Row data.
-   * @param {Object} headers - Header mapping.
-   * @param {number} rowIndex - 1-based row index.
-   * @param {Object} extraData
-   * @returns {string|null}
-   */
-  getRecipientEmail: function(row, headers, rowIndex, extraData) {
-    return safeCell(row, headers['correo']);
   },
 
   /**
@@ -537,13 +524,13 @@ const reportDeliveryTemplate = {
     const lookup = this.directoryLookup(professorName, directoryData, dirHeaders);
 
     if (!lookup || !lookup.email) {
-      return { error: 'Profesor no encontrado en Directorio: ' + professorName };
+      throw new Error('Profesor no encontrado en Directorio: ' + professorName);
     }
 
     // Share report with professor and check result
     const shareResult = shareFileAsViewer(docId, lookup.email);
     if (!shareResult.success) {
-      return { error: 'No se pudo compartir el archivo ' + docId };
+      throw new Error('No se pudo compartir el archivo ' + docId + (shareResult.error ? ': ' + shareResult.error : ''));
     }
 
     return {
@@ -554,24 +541,6 @@ const reportDeliveryTemplate = {
       reportUrl,
       firstName: extractFirstName(professorName) // No fallback needed for professor
     };
-  },
-
-  /**
-   * Returns the recipient email without triggering Drive side effects.
-   * Used by the pre-flight email validation loop in Main.gs (ROBUST-02).
-   * @param {Array} row - Row data.
-   * @param {Object} headers - Header mapping.
-   * @param {number} rowIndex - 1-based row index.
-   * @param {Object} extraData
-   * @returns {string|null}
-   */
-  getRecipientEmail: function(row, headers, rowIndex, extraData) {
-    const professorName = safeCell(row, headers['profesor']);
-    if (!professorName) return null;
-    const directoryData = extraData ? extraData.directoryRows : null;
-    const dirHeaders = extraData ? extraData.dirHeaders : null;
-    const lookup = this.directoryLookup(professorName, directoryData, dirHeaders);
-    return lookup ? lookup.email : null;
   },
 
   buildHtml: function(data) {
@@ -670,10 +639,7 @@ const surveyTemplate = {
     content += `<p>Agradecemos de antemano tu tiempo y colaboración.</p>`;
     content += `<p>Atentamente,<br>Dirección General de Asuntos Internacionales PUCV</p>`;
 
-    return {
-      content: content,
-      extraNote: data.extraNote // Passed to buildEmailLayout via Main.gs
-    };
+    return content;
   }
 };
 
@@ -746,11 +712,11 @@ const classStartStudentsTemplate = {
 function testClassStartStudentsProcessRow() {
   const headers = {
     nombre: 0, correo: 1, idioma: 2, nivel: 3,
-    horario: 4, sala: 5, nombre_profesor: 6, correo_profesor: 7, es_profesor: 8
+    horario: 4, sala: 5, nombre_profesor: 6, correo_profesor: 7, fecha_inicio: 8, es_profesor: 9
   };
 
   // Test 1: student row is processed
-  const studentRow = ['Ana García', 'ana@test.com', 'Inglés', 'A2', 'L-J 8-9', 'E101', 'Prof. Smith', 'smith@pucv.cl', 0];
+  const studentRow = ['Ana García', 'ana@test.com', 'Inglés', 'A2', 'L-J 8-9', 'E101', 'Prof. Smith', 'smith@pucv.cl', new Date('2026-04-01'), 0];
   const r1 = classStartStudentsTemplate.processRow(studentRow, headers, 2, {});
   if (r1 === null) throw new Error('FAIL test 1: student row should not return null');
   if (r1.correo !== 'ana@test.com') throw new Error('FAIL test 1: wrong correo — got: ' + r1.correo);
@@ -759,14 +725,14 @@ function testClassStartStudentsProcessRow() {
   Logger.log('PASS test 1: student row processed correctly (correo, nombreProfesor, firstName verified)');
 
   // Test 2: professor row (number 1) is skipped
-  const profRow = ['Prof. Smith', 'smith@pucv.cl', 'Inglés', 'A2', 'L-J 8-9', 'E101', 'Prof. Smith', 'smith@pucv.cl', 1];
+  const profRow = ['Prof. Smith', 'smith@pucv.cl', 'Inglés', 'A2', 'L-J 8-9', 'E101', 'Prof. Smith', 'smith@pucv.cl', '', 1];
   if (classStartStudentsTemplate.processRow(profRow, headers, 3, {}) !== null) {
     throw new Error('FAIL test 2: professor row should return null');
   }
   Logger.log('PASS test 2: professor row (number 1) skipped');
 
   // Test 3: professor row (string "1") is also skipped — GAS can return strings from Text-formatted cells
-  const profRowStr = ['Prof. Smith', 'smith@pucv.cl', 'Inglés', 'A2', 'L-J 8-9', 'E101', 'Prof. Smith', 'smith@pucv.cl', '1'];
+  const profRowStr = ['Prof. Smith', 'smith@pucv.cl', 'Inglés', 'A2', 'L-J 8-9', 'E101', 'Prof. Smith', 'smith@pucv.cl', '', '1'];
   if (classStartStudentsTemplate.processRow(profRowStr, headers, 4, {}) !== null) {
     throw new Error('FAIL test 3: professor row with string "1" should return null');
   }
@@ -979,4 +945,69 @@ function testClassStartProfessorTemplate() {
   Logger.log('PASS test 5: professor with no matching students returns null (key isolation verified)');
 
   Logger.log('ALL TESTS PASSED: testClassStartProfessorTemplate');
+}
+
+/**
+ * Tests the error-throw paths in certificateTemplate.processRow and
+ * reportDeliveryTemplate.processRow (Bug #1 regression guard).
+ *
+ * These tests verify that sharing failures and missing-directory entries
+ * throw an Error (so the real message reaches the status column) rather
+ * than returning a truthy { error } object that silently propagates to
+ * sendEmail with to: undefined.
+ *
+ * Run from the GAS editor and check the Execution Log.
+ */
+function testProcessRowErrorPaths() {
+  // --- certificateTemplate: shareFileAsViewer failure ---
+  // Stub shareFileAsViewer to simulate a Drive API failure.
+  const origShare = this.shareFileAsViewer;
+  let certThrew = false;
+  let certMessage = '';
+  try {
+    // Temporarily override shareFileAsViewer in the global scope.
+    // In GAS (V8) function declarations are hoisted; we reassign via globalThis.
+    globalThis._origShareFileAsViewer = shareFileAsViewer;
+    globalThis.shareFileAsViewer = function() {
+      return { success: false, error: 'Drive API error simulado' };
+    };
+
+    const certHeaders = { nombre: 0, correo: 1, enlace: 2 };
+    const certRow = ['Ana García', 'ana@test.com', 'https://drive.google.com/file/d/FAKE_FILE_ID_123456789012/view'];
+    certificateTemplate.processRow(certRow, certHeaders, 2, {});
+  } catch (e) {
+    certThrew = true;
+    certMessage = e.message;
+  } finally {
+    globalThis.shareFileAsViewer = globalThis._origShareFileAsViewer;
+    delete globalThis._origShareFileAsViewer;
+  }
+
+  if (!certThrew) throw new Error('FAIL cert test: processRow should throw when shareFileAsViewer fails');
+  if (!certMessage.includes('No se pudo compartir')) {
+    throw new Error('FAIL cert test: error message should mention "No se pudo compartir", got: ' + certMessage);
+  }
+  Logger.log('PASS cert test: certificateTemplate.processRow throws on share failure — message: ' + certMessage);
+
+  // --- reportDeliveryTemplate: professor not found in directory ---
+  let reportThrew = false;
+  let reportMessage = '';
+  try {
+    const repHeaders = { profesor: 0, curso: 1, doc_id: 2, url_informe: 3 };
+    const repRow = ['Profesor Inexistente', 'Curso X', 'DOC123', 'https://drive.google.com/file/d/DOC123/view'];
+    // Pass empty directoryRows so the lookup always fails.
+    const extraData = { directoryRows: [], dirHeaders: { nombre: 0, correo: 1, cc: 2 } };
+    reportDeliveryTemplate.processRow(repRow, repHeaders, 2, extraData);
+  } catch (e) {
+    reportThrew = true;
+    reportMessage = e.message;
+  }
+
+  if (!reportThrew) throw new Error('FAIL report test: processRow should throw when professor not found');
+  if (!reportMessage.includes('Profesor no encontrado en Directorio')) {
+    throw new Error('FAIL report test: error message should mention "Profesor no encontrado", got: ' + reportMessage);
+  }
+  Logger.log('PASS report test: reportDeliveryTemplate.processRow throws on missing professor — message: ' + reportMessage);
+
+  Logger.log('ALL TESTS PASSED: testProcessRowErrorPaths');
 }
