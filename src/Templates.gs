@@ -128,7 +128,7 @@ const confirmationTemplate = {
   name: 'Confirmación de Apertura',
   description: 'Confirmación de inicio de curso con detalles de pago y descuentos.',
   requiredHeaders: ['nombre', 'correo', 'idioma', 'nivel', 'horario'],
-  configKeys: ['payment_url', 'payment_deadline', 'discount_code'],
+  configKeys: ['payment_url', 'payment_deadline', 'discount_code', 'refund_form_url'],
   senderName: 'Programa Idiomas PUCV',
   statusColumn: 'Estado',
   headerTitle: 'CONFIRMACIÓN DE APERTURA DE CURSO',
@@ -173,7 +173,8 @@ const confirmationTemplate = {
       firstName: extractFirstName(nombre, "estudiante"),
       cc,
       paymentUrl: extras.payment_url || this.defaults.paymentUrl,
-      discountCode: extras.discount_code || null
+      discountCode: extras.discount_code || null,
+      refundFormUrl: extras.refund_form_url || null
     };
   },
 
@@ -193,6 +194,11 @@ const confirmationTemplate = {
 
     content += buildButton("Ir al Portal de Pagos", data.paymentUrl);
     content += `<p>Si tienes dificultades con el proceso de pago, por favor responde a este correo adjuntando una captura de pantalla del error.</p>`;
+
+    if (data.refundFormUrl) {
+      content += `<p>Si este horario no te acomoda, puedes solicitar la devolución de tu inscripción completando el siguiente formulario: <a href="${data.refundFormUrl}">Solicitar devolución</a>.</p>`;
+    }
+
     content += `<p>¡Te esperamos!</p>`;
 
     return content;

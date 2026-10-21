@@ -23,21 +23,21 @@ El sistema se basa en una estructura de cinco archivos principales que deben cop
     * Lógica específica para procesar cada fila de datos.
 
 3. **`Main.gs` (El Punto de Entrada):** Gestiona la interfaz y las acciones.
-    * Menú desplegable personalizado: Enviar, Prueba, Vista Previa, Borradores.
+    * Menú desplegable personalizado con acceso directo a **Gestionar Envío**, **Configurar Plantilla**, **Dashboard** y herramientas.
     * Carga automática de configuración desde la hoja "Config".
     * Orquestación de envíos masivos y creación de borradores.
 
-4. **Archivos HTML de UI:** Vistas interactivas para Google Sheets con tipografía *Plus Jakarta Sans* y diseño Bento Grid.
-    * **`Dashboard.html`:** Panel lateral (Sidebar) con métricas en tiempo real, cuota de Gmail, tasa de avance y desglose de envíos.
-    * **`SendDialog.html`:** Interfaz para pre-visualizar cuota y filas a procesar, personalizando asunto, copia y notas antes de enviar.
-    * **`TemplateSelector.html`:** Galería visual para la selección y configuración de nuevas plantillas.
+4. **Archivos HTML de UI:** Vistas interactivas para Google Sheets con tipografía *Plus Jakarta Sans*, diseño Bento Grid y accesibilidad mejorada (soporte completo de teclado, atributos ARIA e indicadores `:focus-visible`).
+    * **`Dashboard.html`:** Panel lateral (Sidebar) con métricas en tiempo real, cuota de Gmail, tasa de avance, desglose de envíos y acciones rápidas.
+    * **`SendDialog.html`:** Interfaz unificada para seleccionar modo (Envío Real, Borradores, Prueba), pre-visualizar cuota y filas a procesar, limitar lotes y personalizar asunto, copia y notas antes de enviar.
+    * **`TemplateSelector.html`:** Galería visual para la selección interactiva y configuración asistida de plantillas.
 
 ## 📋 Plantillas Disponibles
 
 | ID | Nombre | Propósito |
 | :--- | :--- | :--- |
 | `certificate` | Envío de Certificados | Entrega de archivos PDF compartidos vía Drive. |
-| `confirmation` | Confirmación de Apertura | Información de inicio de cursos y códigos de descuento. |
+| `confirmation` | Confirmación de Apertura | Información de inicio de cursos, códigos de descuento y enlace opcional a formulario de devolución. |
 | `payment_reminder` | Recordatorio de Pago | Avisos urgentes con bandas de alerta roja. |
 | `placement_test` | Placement Test | Entrega de credenciales y links para plataformas externas. |
 | `code_delivery` | Envío de Códigos | Distribución segura de códigos de acceso (libros/tests). |

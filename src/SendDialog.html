@@ -151,7 +151,7 @@
         margin-bottom: 2px;
       }
       .mode-desc {
-        font-size: 10px;
+        font-size: 11px;
         color: var(--slate-500);
         line-height: 1.25;
       }
@@ -390,6 +390,14 @@
         box-shadow: none;
         transform: none;
       }
+      .btn:focus-visible {
+        outline: 2px solid var(--secondary);
+        outline-offset: 2px;
+      }
+      .mode-card:focus-visible {
+        outline: 2px solid var(--secondary);
+        outline-offset: 2px;
+      }
 
       /* Loading State */
       .loader-container {
@@ -446,25 +454,25 @@
         </div>
         <div class="mode-grid">
           <!-- Opción 1: Envío Masivo -->
-          <div class="mode-card" id="mode-card-send" onclick="selectMode('send')">
-            <input type="radio" name="sendModeRadio" value="send" />
-            <div class="mode-icon">🚀</div>
+          <div class="mode-card" id="mode-card-send" role="button" tabindex="0" onclick="selectMode('send')" onkeydown="if(event.key==='Enter'||event.key===' '){selectMode('send');event.preventDefault();}">
+            <input type="radio" name="sendModeRadio" value="send" aria-hidden="true" />
+            <div class="mode-icon" aria-hidden="true">🚀</div>
             <div class="mode-title">Envío Real</div>
             <div class="mode-desc">Enviar a los destinatarios</div>
           </div>
 
           <!-- Opción 2: Borradores -->
-          <div class="mode-card" id="mode-card-draft" onclick="selectMode('draft')">
-            <input type="radio" name="sendModeRadio" value="draft" />
-            <div class="mode-icon">📝</div>
+          <div class="mode-card" id="mode-card-draft" role="button" tabindex="0" onclick="selectMode('draft')" onkeydown="if(event.key==='Enter'||event.key===' '){selectMode('draft');event.preventDefault();}">
+            <input type="radio" name="sendModeRadio" value="draft" aria-hidden="true" />
+            <div class="mode-icon" aria-hidden="true">📝</div>
             <div class="mode-title">Borradores</div>
             <div class="mode-desc">Crear en Gmail sin enviar</div>
           </div>
 
           <!-- Opción 3: Prueba -->
-          <div class="mode-card" id="mode-card-test" onclick="selectMode('test')">
-            <input type="radio" name="sendModeRadio" value="test" />
-            <div class="mode-icon">🧪</div>
+          <div class="mode-card" id="mode-card-test" role="button" tabindex="0" onclick="selectMode('test')" onkeydown="if(event.key==='Enter'||event.key===' '){selectMode('test');event.preventDefault();}">
+            <input type="radio" name="sendModeRadio" value="test" aria-hidden="true" />
+            <div class="mode-icon" aria-hidden="true">🧪</div>
             <div class="mode-title">Prueba</div>
             <div class="mode-desc">1 correo con datos muestra</div>
           </div>
@@ -658,13 +666,13 @@
           testContainer.style.display = 'block';
           batchOptions.style.display = 'none';
           if (batchWarning) batchWarning.style.display = 'none';
-          submitBtn.innerHTML = '🧪 Enviar Correo de Prueba';
+          submitBtn.innerHTML = '<span aria-hidden="true">🧪</span> Enviar Correo de Prueba';
           modeBadge.textContent = 'Modo Prueba';
           modeBadge.style.background = 'rgba(13, 148, 136, 0.35)';
         } else if (mode === 'draft') {
           testContainer.style.display = 'none';
           batchOptions.style.display = 'block';
-          submitBtn.innerHTML = '📝 Crear Borradores en Gmail';
+          submitBtn.innerHTML = '<span aria-hidden="true">📝</span> Crear Borradores en Gmail';
           modeBadge.textContent = 'Modo Borrador';
           modeBadge.style.background = 'rgba(99, 102, 241, 0.35)';
           updateBatchWarningVisibility();
@@ -672,7 +680,7 @@
           // send
           testContainer.style.display = 'none';
           batchOptions.style.display = 'block';
-          submitBtn.innerHTML = '🚀 Iniciar Envío Masivo';
+          submitBtn.innerHTML = '<span aria-hidden="true">🚀</span> Iniciar Envío Masivo';
           modeBadge.textContent = 'Modo Envío Real';
           modeBadge.style.background = 'rgba(29, 113, 184, 0.35)';
           updateBatchWarningVisibility();

@@ -372,7 +372,7 @@ function buildEmailLayout(options) {
 
   const extraNoteHtml = options.extraNote
     ? `<div style="background-color: #fefce8; border: 1px solid #fef08a; border-left: 4px solid #eab308; border-radius: 0 8px 8px 0; padding: 16px 18px; margin-top: 25px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; color: #713f12; line-height: 1.55; box-shadow: 0 1px 3px rgba(234,179,8,0.05);">
-         <strong style="color: #854d0e; display: inline-block; margin-bottom: 4px;">📌 Nota adicional:</strong><br>${options.extraNote}
+         <strong style="color: #854d0e; display: inline-block; margin-bottom: 4px;"><span aria-hidden="true">📌</span> Nota adicional:</strong><br>${options.extraNote}
        </div>`
     : "";
 

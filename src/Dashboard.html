@@ -311,6 +311,10 @@
         background: var(--slate-200);
         color: var(--slate-900);
       }
+      .btn:focus-visible {
+        outline: 2px solid var(--secondary);
+        outline-offset: 2px;
+      }
       .btn-action {
         background: var(--white);
         color: var(--navy);
@@ -446,16 +450,16 @@
     <div class="section-title">⚡ Acciones Rápidas</div>
     <div class="action-btn-group">
       <button class="btn btn-primary" onclick="runServerAction('menuSendEmails', 'Gestor de Envío')">
-        📤 Enviar / Preparar Correos
+        <span aria-hidden="true">📤</span> Enviar / Preparar Correos
       </button>
       <button class="btn btn-action" onclick="runServerAction('menuSendTest', 'Prueba')">
-        🧪 Enviar Correo de Prueba
+        <span aria-hidden="true">🧪</span> Enviar Correo de Prueba
       </button>
       <button class="btn btn-action" onclick="runServerAction('menuPreview', 'Vista Previa')">
-        👁 Abrir Vista Previa
+        <span aria-hidden="true">👁</span> Abrir Vista Previa
       </button>
       <button class="btn btn-refresh" onclick="refreshDashboard()">
-        🔄 Refrescar Métricas
+        <span aria-hidden="true">🔄</span> Refrescar Métricas
       </button>
     </div>
 

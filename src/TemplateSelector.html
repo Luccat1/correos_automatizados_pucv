@@ -237,6 +237,14 @@
         box-shadow: none;
         transform: none;
       }
+      .btn:focus-visible {
+        outline: 2px solid var(--secondary);
+        outline-offset: 2px;
+      }
+      .template-card:focus-visible {
+        outline: 2px solid var(--secondary);
+        outline-offset: 2px;
+      }
 
       /* Loader Overlay */
       .loader-overlay {
@@ -291,7 +299,7 @@
 
         <div id="templateList">
           <? templates.forEach(function(t) { ?>
-            <div class="template-card" onclick="selectTemplate('<?= t.id ?>', this)">
+            <div class="template-card" tabindex="0" role="button" onclick="selectTemplate('<?= t.id ?>', this)" onkeydown="if(event.key==='Enter'||event.key===' '){selectTemplate('<?= t.id ?>',this);event.preventDefault();}">
               <div class="template-header">
                 <h3><?= t.name ?></h3>
                 <span class="template-id"><?= t.id ?></span>
@@ -312,7 +320,7 @@
 
       <div class="footer">
         <button class="btn btn-secondary" onclick="google.script.host.close()">Cancelar</button>
-        <button id="setupBtn" class="btn btn-primary" disabled onclick="runSetup()">Configurar Plantilla</button>
+        <button id="setupBtn" class="btn btn-primary" disabled onclick="runSetup()"><span aria-hidden="true">⚙️</span> Configurar Plantilla</button>
       </div>
     </div>
 

@@ -13,14 +13,7 @@ function onOpen() {
     null, // separator
     { label: '⚙️ Configurar Plantilla', functionName: 'menuSetupTemplate' },
     null, // separator
-    {
-      label: '📤 Envío',
-      children: [
-        { label: '📧 Enviar Correos', functionName: 'menuSendEmails' },
-        { label: '📝 Crear Borradores', functionName: 'menuCreateDrafts' },
-        { label: '🧪 Enviar Prueba', functionName: 'menuSendTest' }
-      ]
-    },
+    { label: '📤 Gestionar Envío', functionName: 'menuSendEmails' },
     null, // separator
     {
       label: '🔍 Herramientas',
@@ -280,22 +273,13 @@ function menuPreview() {
 }
 
 /**
- * Triggers mass sending of emails (opens dialog in 'send' mode).
+ * Opens the send management dialog (mode is selected inside the dialog).
  */
 function menuSendEmails() {
   _showSendDialog('send');
 }
 
-/**
- * Triggers mass creation of drafts (opens dialog in 'draft' mode).
- */
-function menuCreateDrafts() {
-  _showSendDialog('draft');
-}
-
-/**
- * Triggers test email dialog (opens dialog in 'test' mode).
- */
+/** Called from Dashboard quick-action to open dialog pre-selected in test mode. */
 function menuSendTest() {
   _showSendDialog('test');
 }

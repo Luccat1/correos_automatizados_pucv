@@ -22,7 +22,8 @@
       "Bash(uv tool:*)",
       "Bash(uvx --show-settings)",
       "Bash(uv cache:*)",
-      "Bash(git grep:*)"
+      "Bash(git grep:*)",
+      "mcp__code-review-graph__semantic_search_nodes_tool"
     ]
   },
   "enableAllProjectMcpServers": true,
