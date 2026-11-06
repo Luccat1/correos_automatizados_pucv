@@ -258,7 +258,7 @@ const paymentReminderTemplate = {
 
     return {
       content: content,
-      alertBand: `🚨 ¡ÚLTIMO PLAZO! Pago vence el ${deadline}`
+      alertBand: `&#128680; ¡ÚLTIMO PLAZO! Pago vence el ${deadline}`
     };
   }
 };
@@ -860,6 +860,83 @@ const classStartProfessorTemplate = {
   }
 };
 
+/**
+ * SIELE Reservation Template
+ * Sends individual reservation codes and step-by-step booking instructions
+ * for the SIELE international Spanish exam.
+ *
+ * configKeys:
+ *   fecha_examen  — exam date shown in subject and body (e.g. "viernes 21 de noviembre")
+ *   hora_examen   — exam time (e.g. "12:30 h")
+ *   fecha_limite  — registration deadline date (e.g. "martes 18")
+ *   hora_limite   — registration deadline time (e.g. "11:59 PM")
+ */
+const sieleReservationTemplate = {
+  id: 'siele_reservation',
+  name: 'Reserva SIELE',
+  description: 'Instrucciones de reserva de examen SIELE con código individual por candidato. Columnas requeridas: nombre, correo, codigo.',
+  requiredHeaders: ['nombre', 'correo', 'codigo'],
+  configKeys: ['fecha_examen', 'hora_examen', 'fecha_limite', 'hora_limite'],
+  senderName: 'Centro de Español LE — DGAI PUCV',
+  statusColumn: 'Estado',
+  headerTitle: 'RESERVA EXAMEN SIELE',
+  footerLines: ['Centro de Español Lengua Extranjera', 'Dirección General de Asuntos Internacionales', 'PUCV'],
+
+  defaults: {
+    fechaExamen: 'por confirmar',
+    horaExamen: 'por confirmar',
+    fechaLimite: 'por confirmar',
+    horaLimite: '11:59 PM',
+    sieleUrl: 'https://siele.org/aulas-vinculadas'
+  },
+
+  processRow: function(row, headers, rowIndex, extraData) {
+    const nombre = requiredCell(row, headers['nombre'], 'Nombre', rowIndex);
+    const correo = requiredCell(row, headers['correo'], 'Correo', rowIndex);
+    const codigo = requiredCell(row, headers['codigo'], 'Código', rowIndex);
+
+    const extras = extraData ? extraData.configExtras : {};
+
+    return {
+      nombre, correo, codigo,
+      firstName: extractFirstName(nombre, 'candidato/a'),
+      fechaExamen: extras.fecha_examen || this.defaults.fechaExamen,
+      horaExamen:  extras.hora_examen  || this.defaults.horaExamen,
+      fechaLimite: extras.fecha_limite || this.defaults.fechaLimite,
+      horaLimite:  extras.hora_limite  || this.defaults.horaLimite
+    };
+  },
+
+  buildHtml: function(data) {
+    const sieleUrl = this.defaults.sieleUrl;
+    const greeting = data.nombre ? `Hola, <strong>${data.firstName}</strong>:` : 'Hola:';
+
+    let content = `<p>${greeting}</p>`;
+    content += `<p>Le envío el procedimiento para reservar su <strong>SIELE</strong> del <strong>${data.fechaExamen}</strong> a las <strong>${data.horaExamen}</strong>.</p>`;
+
+    content += buildWarningBox(
+      `POR FAVOR, HAGA ESTE PROCEDIMIENTO ANTES DE LAS <strong>${data.horaLimite} DEL ${data.fechaLimite}</strong> para que no se bloquee la agenda.`
+    );
+
+    content += `<ol>
+      <li>Ir a la página web: <a href="${sieleUrl}">${sieleUrl}</a></li>
+      <li>Ingresar en la casilla <strong>"código"</strong> lo siguiente: <strong>${data.codigo}</strong></li>
+      <li>Ingresar con su cuenta de candidato SIELE. Si es la primera vez, cree su cuenta con su correo personal. Si ya tiene cuenta, úsela tal como está: <strong>NO CREE UNA NUEVA</strong>. Si no recuerda sus credenciales, solicite ayuda en la misma página de SIELE.</li>
+      <li>Aparecerá la fecha y hora del examen. Seleccione la que corresponda a su calendario.</li>
+      <li>La inscripción estará hecha.</li>
+      <li><strong>Importante:</strong> al registrarse, tome nota de su <strong>usuario</strong> y <strong>contraseña</strong> de SIELE para tenerlos disponibles el día de la prueba.</li>
+    </ol>`;
+
+    content += buildButton('Reservar SIELE', sieleUrl);
+
+    content += buildInfoBox('El día del examen, por favor llegue a la oficina con 10 minutos de anticipación y traiga su clave de candidato SIELE. Si tiene algún problema con el procedimiento, avísenos.');
+
+    content += `<p>Quedo atenta.</p>`;
+
+    return content;
+  }
+};
+
 // Register the templates
 registerTemplate(certificateTemplate);
 registerTemplate(confirmationTemplate);
@@ -871,6 +948,7 @@ registerTemplate(reportDeliveryTemplate);
 registerTemplate(surveyTemplate);
 registerTemplate(classStartStudentsTemplate);
 registerTemplate(classStartProfessorTemplate);
+registerTemplate(sieleReservationTemplate);
 
 /**
  * Tests for _makeCourseKey normalization.
